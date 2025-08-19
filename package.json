@@ -1,0 +1,71 @@
+{
+  "name": "image-processor",
+  "version": "1.0.0",
+  "description": "A powerful desktop image processing application built with React + Tauri + Rust",
+  "type": "module",
+  "keywords": [
+    "image-processing",
+    "desktop-app",
+    "tauri",
+    "rust",
+    "react",
+    "typescript",
+    "image-compression",
+    "watermark",
+    "image-conversion",
+    "crop",
+    "resize"
+  ],
+  "author": {
+    "name": "lizundao",
+    "email": "277059707@qq.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lizundao/image-processing.git"
+  },
+  "homepage": "https://github.com/lizundao/image-processing#readme",
+  "bugs": {
+    "url": "https://github.com/lizundao/image-processing/issues"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "build:tauri": "tauri build",
+    "dev:tauri": "tauri dev"
+  },
+  "dependencies": {
+    "@chakra-ui/icons": "^2.2.4",
+    "@chakra-ui/react": "^2.8.2",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "framer-motion": "^10.16.4",
+    "i18next": "^25.3.6",
+    "i18next-browser-languagedetector": "^8.2.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-dropzone": "^14.2.3",
+    "react-i18next": "^15.6.1",
+    "react-icons": "^4.11.0",
+    "react-image-crop": "^11.0.10"
+  },
+  "devDependencies": {
+    "@tauri-apps/api": "^1.5.0",
+    "@tauri-apps/cli": "^1.5.0",
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react": "^4.0.3",
+    "typescript": "^5.0.2",
+    "vite": "6.0.3"
+  },
+  "overrides": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  }
+}
