@@ -23,11 +23,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lizundao/image-processing.git"
+    "url": "https://github.com/lizundao/image-processor.git"
   },
-  "homepage": "https://github.com/lizundao/image-processing#readme",
+  "homepage": "https://github.com/lizundao/image-processor#readme",
   "bugs": {
-    "url": "https://github.com/lizundao/image-processing/issues"
+    "url": "https://github.com/lizundao/image-processor/issues"
   },
   "scripts": {
     "dev": "vite",
