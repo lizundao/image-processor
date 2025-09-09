@@ -65,18 +65,25 @@ pub fn generate_output_filename(
         
         // println!("  base_filename after replacement: {}", base_filename);
         
-        // 确保文件名有正确的扩展名
+        // 确保文件名有正确的扩展名（转换为小写）
         let final_filename = if !base_filename.contains('.') {
-            format!("{}.{}", base_filename, extension)
+            format!("{}.{}", base_filename, extension.to_lowercase())
         } else {
-            base_filename
+            // 如果已经包含扩展名，确保扩展名是小写的
+            if let Some(last_dot) = base_filename.rfind('.') {
+                let name_part = &base_filename[..last_dot];
+                let ext_part = &base_filename[last_dot + 1..];
+                format!("{}.{}", name_part, ext_part.to_lowercase())
+            } else {
+                base_filename
+            }
         };
         
         // println!("  final_filename: {}", final_filename);
         final_filename
     } else {
-        // 使用默认模式：原文件名_后缀_时间戳.扩展名
-        let default_filename = format!("{}_{}_{}.{}", clean_stem, suffix, timestamp, extension);
+        // 使用默认模式：原文件名_后缀_时间戳.扩展名（转换为小写）
+        let default_filename = format!("{}_{}_{}.{}", clean_stem, suffix, timestamp, extension.to_lowercase());
         // println!("  default_filename: {}", default_filename);
         default_filename
     };

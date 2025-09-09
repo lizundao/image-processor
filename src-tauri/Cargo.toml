@@ -25,6 +25,8 @@ chrono = { version = "0.4", features = ["serde"] }
 rusttype = "0.9"
 fontdb = "0.16"
 gif = "0.13.3"
+webp = "0.2"
+png = "0.17"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem

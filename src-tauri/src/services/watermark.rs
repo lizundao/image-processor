@@ -71,8 +71,14 @@ pub async fn add_watermark_single(
                 margin_y,
             );
 
+            // 解析颜色
+            let default_color = "#000000".to_string();
+            let font_color = settings.font_color.as_ref().unwrap_or(&default_color);
+            let (r, g, b) = parse_hex_color(font_color).unwrap_or((0, 0, 0));
+            
+            
             // 添加文字水印
-            add_text_watermark(&mut img, text, text_x, text_y, settings.opacity, font_size, Some(font_family));
+            add_text_watermark(&mut img, text, text_x, text_y, settings.opacity, font_size, Some(font_family), r, g, b);
         }
         "image" => {
             if let Some(image_path) = &settings.image_path {
@@ -153,6 +159,9 @@ fn add_text_watermark(
     opacity: f32,
     font_size: u32,
     preferred_font: Option<&str>,
+    r: u8,
+    g: u8,
+    b: u8,
 ) {
     // 尝试使用系统默认字体
     let mut db = Database::new();
@@ -197,7 +206,7 @@ fn add_text_watermark(
     if let Some(data) = font_data {
         if let Some(font) = Font::try_from_vec(data) {
             let scale = Scale::uniform(font_size as f32);
-            let color = image::Rgba([0u8, 0u8, 0u8, (opacity * 255.0) as u8]);
+            let color = image::Rgba([r, g, b, (opacity * 255.0) as u8]);
 
             // 使用imageproc绘制文字
             draw_text_mut(img, color, x as i32, y as i32, scale, &font, text);
@@ -206,7 +215,7 @@ fn add_text_watermark(
     }
 
     // 如果字体加载失败，使用简化的绘制方法
-    add_simple_text_watermark(img, text, x, y, opacity, font_size);
+    add_simple_text_watermark(img, text, x, y, opacity, font_size, r, g, b);
 }
 
 /// 简化的文字水印（改进版本，支持中文显示）
@@ -217,6 +226,9 @@ fn add_simple_text_watermark(
     y: u32,
     opacity: f32,
     font_size: u32,
+    r: u8,
+    g: u8,
+    b: u8,
 ) {
     let alpha = (opacity * 255.0) as u8;
     let char_width = font_size; // 中文字符宽度
@@ -246,9 +258,9 @@ fn add_simple_text_watermark(
                     let final_alpha = fg_alpha + bg_alpha * (1.0 - fg_alpha);
 
                     if final_alpha > 0.0 {
-                        pixel[0] = ((0.0 * fg_alpha + pixel[0] as f32 * bg_alpha * (1.0 - fg_alpha)) / final_alpha) as u8;
-                        pixel[1] = ((0.0 * fg_alpha + pixel[1] as f32 * bg_alpha * (1.0 - fg_alpha)) / final_alpha) as u8;
-                        pixel[2] = ((0.0 * fg_alpha + pixel[2] as f32 * bg_alpha * (1.0 - fg_alpha)) / final_alpha) as u8;
+                        pixel[0] = ((r as f32 * fg_alpha + pixel[0] as f32 * bg_alpha * (1.0 - fg_alpha)) / final_alpha) as u8;
+                        pixel[1] = ((g as f32 * fg_alpha + pixel[1] as f32 * bg_alpha * (1.0 - fg_alpha)) / final_alpha) as u8;
+                        pixel[2] = ((b as f32 * fg_alpha + pixel[2] as f32 * bg_alpha * (1.0 - fg_alpha)) / final_alpha) as u8;
                         pixel[3] = (final_alpha * 255.0) as u8;
                     }
                 }
@@ -268,9 +280,9 @@ fn add_simple_text_watermark(
 
             if px < img.width() && py < img.height() {
                 let pixel = img.get_pixel_mut(px, py);
-                pixel[0] = 255; // 白色文字
-                pixel[1] = 255;
-                pixel[2] = 255;
+                pixel[0] = r; // 使用指定的颜色
+                pixel[1] = g;
+                pixel[2] = b;
                 pixel[3] = alpha;
             }
         }

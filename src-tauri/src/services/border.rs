@@ -19,11 +19,9 @@ impl BorderService {
             match Self::add_border_single_image(path, &settings, &global_settings).await {
                 Ok(output_path) => {
                     processed_files.push(output_path);
-                    println!("✅ [边框] 成功处理: {}", path);
                 }
                 Err(e) => {
                     let error_msg = format!("处理 {} 失败: {}", path, e);
-                    println!("❌ [边框] {}", error_msg);
                     errors.push(error_msg);
                 }
             }

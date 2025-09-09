@@ -75,8 +75,8 @@
     "quality": "Quality",
     "includeOriginal": "Include Original",
     "namingPattern": "Naming Pattern",
-    "description": "Grid slice function will cut images into {rows}×{columns} = {total} pieces, each maintaining the original aspect ratio, suitable for making avatars, emoticons, etc.",
-    "gridPreview": "Preview Grid ({rows}×{columns} = {total} pieces)"
+    "description": "Grid slice function will cut images into {{rows}}×{{columns}} = {{total}} pieces, each maintaining the original aspect ratio, suitable for making avatars, emoticons, etc.",
+    "gridPreview": "Preview Grid ({{rows}}×{{columns}} = {{total}} pieces)"
   },
   "compress": {
     "title": "Compression Settings",
@@ -113,13 +113,13 @@
   "convert": {
     "title": "Format Conversion",
     "targetFormat": "Target Format",
-    "formatFeatures": "{format} Format Features",
+    "formatFeatures": "{{format}} Format Features",
     "lossy": "Lossy",
     "lossless": "Lossless",
     "transparency": "Transparency",
     "qualitySettings": "Quality Settings",
     "qualityDescription": "Higher quality means larger files, recommended: photos 80-90, icons 90-95",
-    "transparencyWarning": "{format} format doesn't support transparency, transparent areas will become white background",
+    "transparencyWarning": "{{format}} format doesn't support transparency, transparent areas will become white background",
     "conversionTip": "Conversion will maintain original image dimensions and color information",
     "formatInfo": {
       "JPEG": {
@@ -200,11 +200,11 @@
     "operationStep2": "Drag on each image to select crop area",
     "operationStep3": "After setting all images, click \"Confirm Crop\"",
     "operationStep4": "Return to main interface, click \"Start Processing\" to batch crop all images",
-    "cropParametersSet": "Crop parameters set ({count} images)",
+    "cropParametersSet": "Crop parameters set ({{count}} images)",
     "continueEditing": "Continue Editing",
     "cropParametersSetComplete": "✅ Crop parameters set complete!",
     "allImagesCropParametersSet": "All images' crop parameters have been set. Now you can click \"Start Processing\" on the main interface to batch crop all images.",
-    "image": "Image {index}",
+    "image": "Image {{index}}",
     "set": "Set",
     "notSet": "Not Set",
     "jpeg": "JPEG",
@@ -218,7 +218,7 @@
     "customAngle": "Custom Angle (degrees)",
     "enterRotationAngle": "Enter rotation angle, e.g.: 45",
     "angleRangeDescription": "Supports -360° to 360°, positive clockwise, negative counterclockwise",
-    "currentRotationAngle": "Current rotation angle: {angle}°"
+    "currentRotationAngle": "Current rotation angle: {{angle}}°"
   },
   "flip": {
     "title": "Flip Settings",
@@ -238,7 +238,7 @@
     "borderColor": "Border Color",
     "commonColors": "Common Colors:",
     "customColor": "Custom Color:",
-    "currentColor": "Current: {color}",
+    "currentColor": "Current: {{color}}",
     "clickColorBlock": "Click color block to open color picker",
     "colorPickerDescription": "Support any color selection, click color block to open system color picker",
     "borderStyle": "Border Style",
@@ -275,7 +275,7 @@
     "radiusSettings": "Corner Radius Settings",
     "pixels": "px",
     "quickPresets": "Quick Presets:",
-    "currentRadiusValue": "Current radius: {radius}px",
+    "currentRadiusValue": "Current radius: {{radius}}px",
     "effectDescription": "Corner Radius Effects:",
     "zeroPx": "• 0px: Sharp corners, no rounding",
     "fiveToTwentyPx": "• 5-20px: Subtle rounding, modern design",
@@ -295,7 +295,7 @@
     "imageSpacingSettings": "Image Spacing Settings",
     "pixels": "px",
     "quickPresets": "Quick Presets:",
-    "currentSpacing": "Current spacing: {spacing}px",
+    "currentSpacing": "Current spacing: {{spacing}}px",
     "mergeEffectDescription": "Merge Effect Description:",
     "horizontalMergeEffect": "• Horizontal merge: Images arranged left to right, suitable for wide images",
     "verticalMergeEffect": "• Vertical merge: Images arranged top to bottom, suitable for tall images",
@@ -326,18 +326,18 @@
     "frameRate": "Frame Rate:",
     "loop": "Loop:",
     "infiniteLoop": "Infinite Loop",
-    "timesLoop": "{count} times",
+    "timesLoop": "{{count}} times",
     "quality": "Quality:"
   },
   "enhance": {
     "title": "One-Click Enhancement",
-    "beautyStrength": "Enhancement Strength: {strength}",
+    "beautyStrength": "Enhancement Strength: {{strength}}",
     "autoExposure": "Auto Exposure",
     "autoWhiteBalance": "Auto White Balance",
     "localContrast": "Local Contrast",
     "sharpen": "Sharpen",
     "openPreview": "Open Preview",
-    "enhancePreview": "Enhancement Preview - Image {current} / {total}",
+    "enhancePreview": "Enhancement Preview - Image {{current}} / {{total}}",
     "generatingPreview": "Generating preview...",
     "close": "Close"
   },
@@ -346,7 +346,6 @@
     "dragAndDrop": "Drag and drop images here, or click to select files",
     "noImages": "No images yet",
     "processing": "Processing...",
-    "completed": "Completed",
     "failed": "Failed",
     "startProcessing": "Start Processing",
     "pleaseAddImages": "Please add images first",
@@ -367,21 +366,21 @@
   },
   "processing": {
     "startProcessing": "Start Processing",
-    "processingImages": "Processing {count} images...",
+    "processingImages": "Processing {{count}} images...",
     "processingComplete": "Processing Complete",
     "processingFailed": "Processing Failed",
     "noImages": "No Images",
     "pleaseAddImagesFirst": "Please add images to process first",
     "outputDirectoryNotSet": "Output Directory Not Set",
     "pleaseSelectOutputDirectory": "Please select output directory in settings first",
-    "successfullyProcessed": "Successfully processed and saved {count} images to {directory}",
-    "downloadStarted": "Started downloading {count} processed images",
+    "successfullyProcessed": "Successfully processed and saved {{count}} images to {{directory}}",
+    "downloadStarted": "Started downloading {{count}} processed images",
     "unknownError": "Unknown Error",
     "directorySelectionFailed": "Directory Selection Failed",
     "cannotOpenDirectorySelector": "Cannot open directory selector, please enter path manually",
     "enterPathManually": "Directory selection failed, please enter path manually",
     "directorySelected": "Directory Selected",
-    "directorySelectedAndSaved": "Selected and saved: {path}",
+    "directorySelectedAndSaved": "Selected and saved: {{path}}",
     "directoryAutoSaved": "Output directory auto-saved"
   },
   "toast": {
@@ -402,7 +401,7 @@
       "outputDirectoryRequired": "Please set output directory first",
       "processingFailed": "Processing failed",
       "unknownError": "Unknown error",
-      "unsupportedFunction": "Unsupported function: {functionName}",
+      "unsupportedFunction": "Unsupported function: {{functionName}}",
       "imageLoadFailed": "Image loading failed"
     },
     "messages": {

@@ -71,10 +71,10 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
   // 使用 useMemo 确保按钮状态计算的稳定性
   const buttonState = useMemo(() => {
     const hasImages = images.length > 0;
-            const buttonText = hasImages ? t('imageList.startProcessing') : t('imageList.pleaseAddImages');
+    const buttonText = hasImages ? t('imageList.startProcessing') : t('imageList.pleaseAddImages');
     console.log('🔥 [ImageToolbar] 计算按钮状态:', { hasImages, buttonText, imagesCount: images.length });
     return { hasImages, buttonText };
-  }, [images.length]);
+  }, [images.length, t]);
   const [globalSettings, setGlobalSettings] = useState<GlobalSettings>({
     outputDirectory: '',
     outputFormat: 'original',
@@ -167,6 +167,41 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         settings,
         globalSettings
       });
+      
+      // 特别调试压缩设置
+      if (currentFunction === 'compress') {
+        console.log('🔍 [压缩调试] 压缩设置详情:', {
+          compressSettings: settings.compress,
+          globalQuality: globalSettings.quality,
+          finalQuality: settings.compress?.quality || globalSettings.quality || 80
+        });
+      }
+      
+      // 特别调试水印设置
+      if (currentFunction === 'watermark') {
+        console.log('🔍 [水印调试] 水印设置详情:', {
+          watermarkSettings: settings.watermark,
+          watermarkType: settings.watermark?.type,
+          watermarkText: settings.watermark?.text,
+          watermarkPosition: settings.watermark?.position,
+          watermarkOpacity: settings.watermark?.opacity,
+          watermarkColor: settings.watermark?.fontColor,
+          watermarkFontSize: settings.watermark?.fontSize,
+          watermarkFontFamily: settings.watermark?.fontFamily
+        });
+      }
+      
+      // 特别调试转换设置
+      if (currentFunction === 'convert') {
+        console.log('🔍 [转换调试] 转换设置详情:', {
+          convertSettings: settings.convert,
+          targetFormat: settings.convert?.format,
+          quality: settings.convert?.quality || globalSettings.quality || 85,
+          compressionLevel: settings.convert?.compressionLevel || 9,
+          preserveTransparency: settings.convert?.preserveTransparency,
+          backgroundColor: settings.convert?.backgroundColor
+        });
+      }
       
       // 添加详细的settings调试信息
       console.log('🔍 [ImageToolbar] 详细settings信息:', {

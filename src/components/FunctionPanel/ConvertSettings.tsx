@@ -30,6 +30,7 @@ interface ConvertSettingsProps {
   settings?: {
     format: 'JPEG' | 'PNG' | 'WEBP' | 'GIF' | 'BMP' | 'TIFF' | 'ICO';
     quality?: number; // 1-100, 仅适用于有损格式
+    compressionLevel?: number; // 0-9, PNG压缩级别
     preserveTransparency?: boolean; // 是否保持透明度
     preserveMetadata?: boolean; // 是否保留元数据
     colorSpace?: 'sRGB' | 'AdobeRGB' | 'ProPhotoRGB'; // 色彩空间
@@ -38,6 +39,7 @@ interface ConvertSettingsProps {
   onChange: (settings: {
     format: 'JPEG' | 'PNG' | 'WEBP' | 'GIF' | 'BMP' | 'TIFF' | 'ICO';
     quality?: number;
+    compressionLevel?: number;
     preserveTransparency?: boolean;
     preserveMetadata?: boolean;
     colorSpace?: 'sRGB' | 'AdobeRGB' | 'ProPhotoRGB';
@@ -51,6 +53,7 @@ const ConvertSettings: React.FC<ConvertSettingsProps> = ({ settings, onChange })
   const defaultSettings = {
     format: 'JPEG' as const,
     quality: 85,
+    compressionLevel: 9, // PNG压缩级别 0-9
     preserveTransparency: true,
     preserveMetadata: false,
     colorSpace: 'sRGB' as const,
@@ -221,6 +224,49 @@ const ConvertSettings: React.FC<ConvertSettingsProps> = ({ settings, onChange })
           </HStack>
           <Text fontSize="xs" color="gray.500" mt={1}>
             {t('convert.qualityDescription')}
+          </Text>
+        </FormControl>
+      )}
+
+      {/* PNG压缩级别设置 */}
+      {currentSettings.format === 'PNG' && (
+        <FormControl>
+          <FormLabel>
+            PNG压缩级别
+            <Text as="span" fontSize="sm" color="gray.500" ml={2}>
+              ({currentSettings.compressionLevel}/9)
+            </Text>
+          </FormLabel>
+          <HStack spacing={4}>
+            <Slider
+              value={currentSettings.compressionLevel}
+              onChange={(value) => handleChange('compressionLevel', value)}
+              min={0}
+              max={9}
+              step={1}
+              flex={1}
+            >
+              <SliderTrack>
+                <SliderFilledTrack />
+              </SliderTrack>
+              <SliderThumb />
+            </Slider>
+            <NumberInput
+              value={currentSettings.compressionLevel}
+              onChange={(_, value) => handleChange('compressionLevel', value)}
+              min={0}
+              max={9}
+              w="80px"
+            >
+              <NumberInputField />
+              <NumberInputStepper>
+                <NumberIncrementStepper />
+                <NumberDecrementStepper />
+              </NumberInputStepper>
+            </NumberInput>
+          </HStack>
+          <Text fontSize="xs" color="gray.500" mt={1}>
+            0=快速压缩(文件较大), 9=最高压缩(文件最小,处理较慢)
           </Text>
         </FormControl>
       )}

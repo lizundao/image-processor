@@ -7,13 +7,15 @@ use std::path::Path;
 /// 压缩单张图片
 pub async fn compress_single_image(
     input_path: &str,
-    _settings: &CompressSettings,
+    settings: &CompressSettings,
     global_settings: &GlobalSettings,
 ) -> Result<String> {
 
     // 验证输入
     validate_image_file(input_path)?;
-    validate_quality(global_settings.quality)?;
+    // 优先使用settings中的质量，其次使用global_settings中的质量
+    let quality = settings.quality.unwrap_or(global_settings.quality);
+    validate_quality(quality)?;
 
     // 验证输出目录
     if global_settings.output_directory.is_empty() {
@@ -77,7 +79,7 @@ pub async fn compress_single_image(
         ImageFormat::Jpeg => {
             // JPEG格式需要特殊处理质量参数
             let mut output = std::fs::File::create(&output_path)?;
-            let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut output, global_settings.quality);
+            let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut output, quality);
             img.write_with_encoder(encoder)?;
         }
         ImageFormat::Png => {
@@ -167,7 +169,7 @@ pub fn get_recommended_compress_settings(file_size: u64) -> CompressSettings {
     };
     
     CompressSettings {
-        quality,
+        quality: Some(quality),
         format: "original".to_string(), // 使用默认格式，实际格式由全局设置决定
     }
 }

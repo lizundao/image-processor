@@ -11,7 +11,7 @@ pub struct ProcessingResult {
 // 压缩设置
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CompressSettings {
-    pub quality: u8,
+    pub quality: Option<u8>,
     pub format: String,
 }
 

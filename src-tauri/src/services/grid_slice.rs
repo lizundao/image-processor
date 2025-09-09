@@ -84,9 +84,27 @@ async fn grid_slice_single_image(
 
     let format = crate::utils::get_image_format(&output_format)?;
 
-    // 生成输出文件名基础部分
+    // 生成输出文件名基础部分（去掉临时文件时间戳）
     let path = Path::new(input_path);
     let stem = path.file_stem().unwrap_or_default().to_str().unwrap_or("image");
+    
+    // 如果文件名包含时间戳（格式：原文件名_时间戳），去掉时间戳部分
+    let clean_stem = if stem.contains('_') {
+        // 检查是否以数字结尾（时间戳格式）
+        if let Some(last_underscore) = stem.rfind('_') {
+            let potential_timestamp = &stem[last_underscore + 1..];
+            // 如果下划线后的部分是纯数字且长度>=10，认为是时间戳
+            if potential_timestamp.chars().all(|c| c.is_ascii_digit()) && potential_timestamp.len() >= 10 {
+                &stem[..last_underscore]
+            } else {
+                stem
+            }
+        } else {
+            stem
+        }
+    } else {
+        stem
+    };
 
     let mut output_paths = Vec::new();
 
@@ -101,12 +119,12 @@ async fn grid_slice_single_image(
             // 裁剪切片
             let slice = img.crop_imm(x, y, w, h);
 
-            // 生成输出文件名
+            // 生成输出文件名（去掉时间戳）
             let slice_name = settings.naming_pattern
                 .replace("{row}", &(row + 1).to_string())
                 .replace("{col}", &(col + 1).to_string());
 
-            let output_filename = format!("{}_{}.{}", stem, slice_name, output_format);
+            let output_filename = format!("{}_{}.{}", clean_stem, slice_name, output_format);
             let output_path = if global_settings.output_directory.is_empty() {
                 output_filename
             } else {
@@ -147,9 +165,9 @@ async fn grid_slice_single_image(
         }
     }
 
-    // 如果设置包含原图，复制原图
+    // 如果设置包含原图，复制原图（去掉时间戳）
     if settings.include_original {
-        let original_filename = format!("{}_original.{}", stem, output_format);
+        let original_filename = format!("{}_original.{}", clean_stem, output_format);
         let original_output_path = if global_settings.output_directory.is_empty() {
             original_filename
         } else {

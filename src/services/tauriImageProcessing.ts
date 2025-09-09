@@ -223,13 +223,13 @@ export class TauriImageProcessingService {
         return await invoke('compress_images', {
           inputPaths: inputPaths,
           settings: {
-            quality: settings.compress?.quality || 80,
+            quality: settings.compress?.quality || globalSettings.quality || 80,
             format: globalSettings.outputFormat || 'original',
           },
           globalSettings: {
             output_directory: globalSettings.outputDirectory,
             output_format: globalSettings.outputFormat,
-            quality: globalSettings.quality,
+            quality: settings.compress?.quality || globalSettings.quality || 80,
             filename_pattern: globalSettings.filenamePattern,
             overwrite_existing: globalSettings.overwriteExisting,
 
@@ -240,15 +240,18 @@ export class TauriImageProcessingService {
         return await invoke('add_watermark', {
           inputPaths: inputPaths,
           settings: {
-            type: settings.watermark?.type || 'text',
+            watermark_type: settings.watermark?.type || 'text',
             text: settings.watermark?.text || 'Watermark',
-            fontSize: settings.watermark?.fontSize || 24,
-            fontColor: settings.watermark?.fontColor || '#000000',
-            fontWeight: settings.watermark?.fontWeight || 'normal',
+            font_size: settings.watermark?.fontSize || 24,
+            font_color: settings.watermark?.fontColor || '#000000',
+            font_weight: settings.watermark?.fontWeight || 'normal',
+            font_family: settings.watermark?.fontFamily || 'Arial',
             position: settings.watermark?.position || 'bottom-right',
             opacity: settings.watermark?.opacity || 0.5,
-            marginX: settings.watermark?.marginX || 20,
-            marginY: settings.watermark?.marginY || 20,
+            margin_x: settings.watermark?.marginX || 20,
+            margin_y: settings.watermark?.marginY || 20,
+            image_path: settings.watermark?.imagePath,
+            image_scale: settings.watermark?.imageScale || 1.0,
           },
           globalSettings: {
             output_directory: globalSettings.outputDirectory,
@@ -264,7 +267,12 @@ export class TauriImageProcessingService {
           inputPaths: inputPaths,
           settings: {
             format: settings.convert?.format || 'JPEG',
-            quality: settings.convert?.quality || 85,
+            quality: settings.convert?.quality || globalSettings.quality || 85,
+            preserve_transparency: settings.convert?.preserveTransparency || true,
+            preserve_metadata: settings.convert?.preserveMetadata || false,
+            background_color: settings.convert?.backgroundColor || '#FFFFFF',
+            compression_level: settings.convert?.compressionLevel || 9, // 默认使用最高压缩
+            progressive: settings.convert?.progressive || false,
           },
           globalSettings: {
             output_directory: globalSettings.outputDirectory,
@@ -296,14 +304,14 @@ export class TauriImageProcessingService {
           inputPaths: inputPaths,
           settings: {
             mode: settings.crop?.mode || 'ratio',
-            aspectRatio: settings.crop?.aspectRatio || 1.0,
-            customRatioWidth: settings.crop?.customRatioWidth,
-            customRatioHeight: settings.crop?.customRatioHeight,
+            aspect_ratio: settings.crop?.aspectRatio || 1.0,
+            custom_ratio_width: settings.crop?.customRatioWidth,
+            custom_ratio_height: settings.crop?.customRatioHeight,
             x: settings.crop?.x,
             y: settings.crop?.y,
             width: settings.crop?.width,
             height: settings.crop?.height,
-            outputFormat: settings.crop?.outputFormat || 'JPEG',
+            output_format: settings.crop?.outputFormat || 'JPEG',
             quality: settings.crop?.quality || 85,
           },
           globalSettings: {
