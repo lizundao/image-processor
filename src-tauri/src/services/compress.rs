@@ -1,7 +1,7 @@
 use crate::types::*;
 use crate::utils::*;
 use anyhow::Result;
-use image::ImageFormat;
+use image::{ImageFormat, DynamicImage};
 use std::path::Path;
 
 /// 压缩单张图片
@@ -85,21 +85,30 @@ pub async fn compress_single_image(
             img.write_with_encoder(encoder)?;
         }
         ImageFormat::Png => {
-            // PNG格式根据质量设置压缩级别
-            let compression_level = match quality {
-                90..=100 => image::codecs::png::CompressionType::Best,
-                70..=89 => image::codecs::png::CompressionType::Default,
-                50..=69 => image::codecs::png::CompressionType::Fast,
-                _ => image::codecs::png::CompressionType::Fast,
-            };
-            println!("🔍 [压缩] PNG格式，质量: {}, 压缩级别: {:?}", quality, compression_level);
-            let mut output = std::fs::File::create(&output_path)?;
-            let encoder = image::codecs::png::PngEncoder::new_with_quality(
-                &mut output,
-                compression_level,
-                image::codecs::png::FilterType::Paeth,
-            );
-            img.write_with_encoder(encoder)?;
+            // PNG格式根据质量设置进行优化
+            println!("🔍 [压缩] PNG格式，质量: {}", quality);
+            
+            // 根据质量决定是否进行颜色减少优化
+            if quality < 80 {
+                // 低质量时进行颜色减少优化
+                let optimized_img = optimize_png_for_compression(&img, quality)?;
+                let mut output = std::fs::File::create(&output_path)?;
+                let encoder = image::codecs::png::PngEncoder::new_with_quality(
+                    &mut output,
+                    image::codecs::png::CompressionType::Best,
+                    image::codecs::png::FilterType::Paeth,
+                );
+                optimized_img.write_with_encoder(encoder)?;
+            } else {
+                // 高质量时使用最佳压缩
+                let mut output = std::fs::File::create(&output_path)?;
+                let encoder = image::codecs::png::PngEncoder::new_with_quality(
+                    &mut output,
+                    image::codecs::png::CompressionType::Best,
+                    image::codecs::png::FilterType::Paeth,
+                );
+                img.write_with_encoder(encoder)?;
+            }
         }
         ImageFormat::WebP => {
             // WebP格式需要重新编码以应用质量设置
@@ -215,4 +224,36 @@ pub fn estimate_compressed_size(original_size: u64, quality: u8, format: &str) -
     };
     
     (original_size as f64 * compression_factor) as u64
+}
+
+/// 为PNG压缩优化图片
+fn optimize_png_for_compression(img: &DynamicImage, quality: u8) -> Result<DynamicImage> {
+    let rgba_img = img.to_rgba8();
+    let (width, height) = rgba_img.dimensions();
+    
+    // 根据质量计算颜色减少程度
+    let color_reduction_factor = match quality {
+        70..=79 => 0.95,  // 轻微减少
+        50..=69 => 0.90,  // 中等减少
+        30..=49 => 0.85,  // 较多减少
+        _ => 0.80,        // 大量减少
+    };
+    
+    let mut optimized_pixels = Vec::with_capacity((width * height * 4) as usize);
+    
+    for pixel in rgba_img.pixels() {
+        let [r, g, b, a] = pixel.0;
+        
+        // 减少颜色精度
+        let new_r = ((r as f32 * color_reduction_factor) as u8).min(255);
+        let new_g = ((g as f32 * color_reduction_factor) as u8).min(255);
+        let new_b = ((b as f32 * color_reduction_factor) as u8).min(255);
+        
+        optimized_pixels.extend_from_slice(&[new_r, new_g, new_b, a]);
+    }
+    
+    let optimized_rgba = image::RgbaImage::from_raw(width, height, optimized_pixels)
+        .ok_or_else(|| anyhow::anyhow!("无法创建优化后的图片"))?;
+    
+    Ok(DynamicImage::ImageRgba8(optimized_rgba))
 }
