@@ -221,11 +221,6 @@ export class TauriImageProcessingService {
     switch (functionName) {
       case 'compress':
         const compressQuality = settings.compress?.quality || globalSettings.quality;
-        console.log('🔍 [压缩] 前端传递的质量设置:', {
-          compressSettings: settings.compress,
-          globalQuality: globalSettings.quality,
-          finalQuality: compressQuality
-        });
         return await invoke('compress_images', {
           inputPaths: inputPaths,
           settings: {

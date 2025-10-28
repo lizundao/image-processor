@@ -15,7 +15,6 @@ pub async fn compress_single_image(
     validate_image_file(input_path)?;
     // 使用settings中的质量
     let quality = settings.quality;
-    println!("🔍 [压缩] 接收到的质量设置: {}", quality);
     validate_quality(quality)?;
 
     // 验证输出目录
@@ -79,19 +78,15 @@ pub async fn compress_single_image(
     match format {
         ImageFormat::Jpeg => {
             // JPEG格式需要特殊处理质量参数
-            println!("🔍 [压缩] JPEG格式，质量: {}", quality);
             let mut output = std::fs::File::create(&output_path)?;
             let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut output, quality);
             img.write_with_encoder(encoder)?;
         }
         ImageFormat::Png => {
             // PNG格式根据质量设置进行优化
-            println!("🔍 [压缩] PNG格式，质量: {}", quality);
-            
             // 根据质量决定是否进行颜色减少优化
             if quality < 80 {
                 // 低质量时进行颜色减少优化
-                println!("🔍 [压缩] 对PNG进行颜色减少优化");
                 let optimized_img = optimize_png_for_compression(&img, quality)?;
                 let mut output = std::fs::File::create(&output_path)?;
                 let encoder = image::codecs::png::PngEncoder::new_with_quality(
@@ -102,7 +97,6 @@ pub async fn compress_single_image(
                 optimized_img.write_with_encoder(encoder)?;
             } else {
                 // 高质量时使用最佳压缩
-                println!("🔍 [压缩] PNG使用最佳压缩模式");
                 let mut output = std::fs::File::create(&output_path)?;
                 let encoder = image::codecs::png::PngEncoder::new_with_quality(
                     &mut output,
@@ -116,7 +110,6 @@ pub async fn compress_single_image(
             // WebP格式需要重新编码以应用质量设置
             use webp::Encoder;
             let quality_f32 = quality as f32 / 100.0;
-            println!("🔍 [压缩] WebP格式，质量: {}, 浮点质量: {}", quality, quality_f32);
             let rgba_img = img.to_rgba8();
             let (width, height) = rgba_img.dimensions();
             let encoder = Encoder::from_rgba(&rgba_img, width, height);
@@ -241,7 +234,6 @@ fn optimize_png_for_compression(img: &DynamicImage, quality: u8) -> Result<Dynam
         _ => 4,        // 16色 - 大量量化
     };
     
-    println!("🔍 [压缩] PNG颜色量化位深: {}位 ({}色)", quantize_bits, 1 << quantize_bits);
     
     let quantize_factor = 255.0 / ((1 << quantize_bits) - 1) as f32;
     
