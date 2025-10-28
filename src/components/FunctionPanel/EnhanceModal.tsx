@@ -44,9 +44,9 @@ const EnhanceModal: React.FC<EnhanceModalProps> = ({ isOpen, onClose, images, pa
 			}
 		};
 		// 防抖
-		const t = setTimeout(run, 180);
-		return () => { cancelled = true; clearTimeout(t); };
-	}, [isOpen, currentIndex, currentImage?.url, params.strength, params.autoExposure, params.autoWhiteBalance, params.localContrast, params.sharpen]);
+		const timeoutId = setTimeout(run, 180);
+		return () => { cancelled = true; clearTimeout(timeoutId); };
+	}, [isOpen, currentIndex, currentImage?.url, params.strength, params.autoExposure, params.autoWhiteBalance, params.localContrast, params.sharpen, t, toast]);
 
 	useEffect(() => {
 		if (!isOpen) {
