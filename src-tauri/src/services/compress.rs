@@ -91,6 +91,7 @@ pub async fn compress_single_image(
             // 根据质量决定是否进行颜色减少优化
             if quality < 80 {
                 // 低质量时进行颜色减少优化
+                println!("🔍 [压缩] 对PNG进行颜色减少优化");
                 let optimized_img = optimize_png_for_compression(&img, quality)?;
                 let mut output = std::fs::File::create(&output_path)?;
                 let encoder = image::codecs::png::PngEncoder::new_with_quality(
@@ -101,6 +102,7 @@ pub async fn compress_single_image(
                 optimized_img.write_with_encoder(encoder)?;
             } else {
                 // 高质量时使用最佳压缩
+                println!("🔍 [压缩] PNG使用最佳压缩模式");
                 let mut output = std::fs::File::create(&output_path)?;
                 let encoder = image::codecs::png::PngEncoder::new_with_quality(
                     &mut output,
@@ -233,23 +235,38 @@ fn optimize_png_for_compression(img: &DynamicImage, quality: u8) -> Result<Dynam
     
     // 根据质量计算颜色减少程度
     let color_reduction_factor = match quality {
-        70..=79 => 0.95,  // 轻微减少
-        50..=69 => 0.90,  // 中等减少
-        30..=49 => 0.85,  // 较多减少
-        _ => 0.80,        // 大量减少
+        70..=79 => 0.85,  // 轻微减少
+        50..=69 => 0.75,  // 中等减少
+        30..=49 => 0.65,  // 较多减少
+        _ => 0.55,        // 大量减少
     };
+    
+    println!("🔍 [压缩] 颜色减少因子: {}", color_reduction_factor);
     
     let mut optimized_pixels = Vec::with_capacity((width * height * 4) as usize);
     
     for pixel in rgba_img.pixels() {
         let [r, g, b, a] = pixel.0;
         
-        // 减少颜色精度
+        // 减少颜色精度并量化
         let new_r = ((r as f32 * color_reduction_factor) as u8).min(255);
         let new_g = ((g as f32 * color_reduction_factor) as u8).min(255);
         let new_b = ((b as f32 * color_reduction_factor) as u8).min(255);
         
-        optimized_pixels.extend_from_slice(&[new_r, new_g, new_b, a]);
+        // 进一步量化以减少颜色种类
+        let quantize_bits = match quality {
+            70..=79 => 7,  // 128色
+            50..=69 => 6,  // 64色
+            30..=49 => 5,  // 32色
+            _ => 4,        // 16色
+        };
+        
+        let quantize_factor = 255.0 / ((1 << quantize_bits) - 1) as f32;
+        let quantized_r = ((new_r as f32 / quantize_factor).round() * quantize_factor) as u8;
+        let quantized_g = ((new_g as f32 / quantize_factor).round() * quantize_factor) as u8;
+        let quantized_b = ((new_b as f32 / quantize_factor).round() * quantize_factor) as u8;
+        
+        optimized_pixels.extend_from_slice(&[quantized_r, quantized_g, quantized_b, a]);
     }
     
     let optimized_rgba = image::RgbaImage::from_raw(width, height, optimized_pixels)
