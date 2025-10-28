@@ -83,14 +83,24 @@ pub async fn compress_single_image(
             img.write_with_encoder(encoder)?;
         }
         ImageFormat::Png => {
-            // PNG格式的压缩
+            // PNG格式使用最高压缩
             let mut output = std::fs::File::create(&output_path)?;
-            let encoder = image::codecs::png::PngEncoder::new(&mut output);
+            let encoder = image::codecs::png::PngEncoder::new_with_quality(
+                &mut output,
+                image::codecs::png::CompressionType::Best,
+                image::codecs::png::FilterType::Adaptive,
+            );
             img.write_with_encoder(encoder)?;
         }
         ImageFormat::WebP => {
-            // WebP格式的压缩 - 使用默认保存方法
-            img.save_with_format(&output_path, format)?;
+            // WebP格式需要重新编码以应用质量设置
+            use webp::Encoder;
+            let rgba_img = img.to_rgba8();
+            let (width, height) = rgba_img.dimensions();
+            let encoder = Encoder::from_rgba(&rgba_img, width, height);
+            let quality_f32 = quality as f32 / 100.0;
+            let webp_data = encoder.encode(quality_f32);
+            std::fs::write(&output_path, &*webp_data)?;
         }
         _ => {
             // 其他格式使用默认保存
