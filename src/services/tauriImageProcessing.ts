@@ -223,7 +223,7 @@ export class TauriImageProcessingService {
         return await invoke('compress_images', {
           inputPaths: inputPaths,
           settings: {
-            quality: settings.compress?.quality || globalSettings.quality || 80,
+            quality: settings.compress?.quality || globalSettings.quality,
             format: globalSettings.outputFormat || 'original',
           },
           globalSettings: {

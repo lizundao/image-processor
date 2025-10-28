@@ -13,8 +13,8 @@ pub async fn compress_single_image(
 
     // 验证输入
     validate_image_file(input_path)?;
-    // 优先使用settings中的质量，其次使用global_settings中的质量
-    let quality = settings.quality.unwrap_or(global_settings.quality);
+    // 使用settings中的质量
+    let quality = settings.quality;
     validate_quality(quality)?;
 
     // 验证输出目录
@@ -169,7 +169,7 @@ pub fn get_recommended_compress_settings(file_size: u64) -> CompressSettings {
     };
     
     CompressSettings {
-        quality: Some(quality),
+        quality,
         format: "original".to_string(), // 使用默认格式，实际格式由全局设置决定
     }
 }
