@@ -15,6 +15,7 @@ pub async fn compress_single_image(
     validate_image_file(input_path)?;
     // 使用settings中的质量
     let quality = settings.quality;
+    println!("🔍 [压缩] 接收到的质量设置: {}", quality);
     validate_quality(quality)?;
 
     // 验证输出目录
