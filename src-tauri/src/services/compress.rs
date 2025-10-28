@@ -79,27 +79,36 @@ pub async fn compress_single_image(
     match format {
         ImageFormat::Jpeg => {
             // JPEG格式需要特殊处理质量参数
+            println!("🔍 [压缩] JPEG格式，质量: {}", quality);
             let mut output = std::fs::File::create(&output_path)?;
             let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut output, quality);
             img.write_with_encoder(encoder)?;
         }
         ImageFormat::Png => {
-            // PNG格式使用最高压缩
+            // PNG格式根据质量设置压缩级别
+            let compression_level = match quality {
+                90..=100 => image::codecs::png::CompressionType::Best,
+                70..=89 => image::codecs::png::CompressionType::Default,
+                50..=69 => image::codecs::png::CompressionType::Fast,
+                _ => image::codecs::png::CompressionType::Fast,
+            };
+            println!("🔍 [压缩] PNG格式，质量: {}, 压缩级别: {:?}", quality, compression_level);
             let mut output = std::fs::File::create(&output_path)?;
             let encoder = image::codecs::png::PngEncoder::new_with_quality(
                 &mut output,
-                image::codecs::png::CompressionType::Best,
-                image::codecs::png::FilterType::Adaptive,
+                compression_level,
+                image::codecs::png::FilterType::Paeth,
             );
             img.write_with_encoder(encoder)?;
         }
         ImageFormat::WebP => {
             // WebP格式需要重新编码以应用质量设置
             use webp::Encoder;
+            let quality_f32 = quality as f32 / 100.0;
+            println!("🔍 [压缩] WebP格式，质量: {}, 浮点质量: {}", quality, quality_f32);
             let rgba_img = img.to_rgba8();
             let (width, height) = rgba_img.dimensions();
             let encoder = Encoder::from_rgba(&rgba_img, width, height);
-            let quality_f32 = quality as f32 / 100.0;
             let webp_data = encoder.encode(quality_f32);
             std::fs::write(&output_path, &*webp_data)?;
         }
