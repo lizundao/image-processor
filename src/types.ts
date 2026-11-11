@@ -21,13 +21,11 @@ export type ProcessingFunction =
 	| 'crop'
 	| 'rotate'
 	| 'flip'
+	| 'brightness'
 	| 'border'
 	| 'rounded'
 	| 'merge'
 	| 'gif'
-	| 'brightness'
-	| 'contrast'
-	| 'saturation'
 	| 'enhance'
 	| 'gridSlice';
 
@@ -73,6 +71,9 @@ export interface ProcessingSettings {
 		horizontal: boolean;
 		vertical: boolean;
 	};
+	brightness?: {
+		value: number;
+	};
 	border?: {
 		width: number;
 		color: string;
@@ -94,15 +95,6 @@ export interface ProcessingSettings {
 		loop_count: number; // 循环次数 (0=无限循环, 1-100)
 		quality: number;    // 输出质量 (1-100)
 	};
-	brightness?: {
-		value: number;
-	};
-	contrast?: {
-		value: number;
-	};
-	saturation?: {
-		value: number;
-	};
 	enhance?: {
 		strength: number; // 0-100
 		autoExposure?: boolean;
@@ -122,6 +114,8 @@ export interface ProcessingSettings {
 
 
 
+export type AppTheme = 'light' | 'dark' | 'system';
+
 export interface GlobalSettings {
 	outputDirectory: string;
 	outputFormat: 'JPEG' | 'PNG' | 'WEBP' | 'GIF' | 'BMP' | 'original';
@@ -131,6 +125,7 @@ export interface GlobalSettings {
 	filenamePattern: string;
 	autoOpenOutputFolder: boolean;
 	language: 'zh-CN' | 'en-US';
+	theme: AppTheme;
 	// 水印设置
 	watermark?: {
 		type: 'text' | 'image';

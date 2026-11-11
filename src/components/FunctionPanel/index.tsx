@@ -9,6 +9,7 @@ import WatermarkSettings from './WatermarkSettings';
 import ConvertSettings from './ConvertSettings';
 import RotateSettings from './RotateSettings';
 import FlipSettings from './FlipSettings';
+import BrightnessSettings from './BrightnessSettings';
 import BorderSettings from './BorderSettings';
 import RoundedSettings from './RoundedSettings';
 import MergeSettings from './MergeSettings';
@@ -131,6 +132,13 @@ const FunctionPanel: React.FC<FunctionPanelProps> = ({
 					<FlipSettings
 						settings={settings.flip || { horizontal: false, vertical: false }}
 						onChange={(flip) => onSettingsChange({ flip })}
+					/>
+				);
+			case 'brightness':
+				return (
+					<BrightnessSettings
+						settings={settings.brightness || { value: 0 }}
+						onChange={(brightness) => onSettingsChange({ brightness })}
 					/>
 				);
 			case 'border':

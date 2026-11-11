@@ -7,6 +7,7 @@ pub async fn convert_single_format(
     input_path: &str,
     settings: &ConvertSettings,
     global_settings: &GlobalSettings,
+    file_index: Option<usize>,
 ) -> Result<String> {
     
     // 验证输入
@@ -18,10 +19,10 @@ pub async fn convert_single_format(
     // 生成输出文件名
     let output_path = generate_output_filename(
         input_path,
-        &global_settings.output_directory,
-        &global_settings.filename_pattern,
+        global_settings,
         "converted",
         &settings.format,
+        file_index,
     );
     
     // 检查文件覆盖
@@ -114,28 +115,28 @@ pub async fn convert_format_batch(
 ) -> ProcessingResult {
     
     let mut processed_files = Vec::new();
-    
-    for (_index, input_path) in input_paths.iter().enumerate() {
-        
-        match convert_single_format(input_path, &settings, &global_settings).await {
+    let mut errors: Vec<String> = Vec::new();
+
+    for (index, input_path) in input_paths.iter().enumerate() {
+
+        match convert_single_format(input_path, &settings, &global_settings, Some(index)).await {
             Ok(output_path) => {
                 processed_files.push(output_path);
             }
             Err(e) => {
-                return ProcessingResult {
-                    success: false,
-                    processed_files: vec![],
-                    error: Some(format!("格式转换失败: {}", e)),
-                };
+                errors.push(format!("{}: {}", input_path, e));
             }
         }
     }
-    
-    
-    ProcessingResult {
-        success: true,
-        processed_files,
-        error: None,
+
+    if errors.is_empty() {
+        ProcessingResult { success: true, processed_files, error: None }
+    } else {
+        ProcessingResult {
+            success: false,
+            processed_files,
+            error: Some(errors.join("; ")),
+        }
     }
 }
 
@@ -176,18 +177,16 @@ pub async fn convert_to_web_optimized(
 ) -> ProcessingResult {
     
     let mut processed_files = Vec::new();
-    
-    for (_index, input_path) in input_paths.iter().enumerate() {
-        
+    let mut errors: Vec<String> = Vec::new();
+
+    for (index, input_path) in input_paths.iter().enumerate() {
+
         // 根据图片特性选择最佳格式
         let optimal_format = match determine_optimal_web_format(input_path) {
             Ok(format) => format,
             Err(e) => {
-                return ProcessingResult {
-                    success: false,
-                    processed_files: vec![],
-                    error: Some(format!("确定最佳格式失败: {}", e)),
-                };
+                errors.push(format!("{}: 确定最佳格式失败: {}", input_path, e));
+                continue;
             }
         };
         
@@ -201,25 +200,24 @@ pub async fn convert_to_web_optimized(
             progressive: Some(false),
         };
         
-        match convert_single_format(input_path, &settings, &global_settings).await {
+        match convert_single_format(input_path, &settings, &global_settings, Some(index)).await {
             Ok(output_path) => {
                 processed_files.push(output_path);
             }
             Err(e) => {
-                return ProcessingResult {
-                    success: false,
-                    processed_files: vec![],
-                    error: Some(format!("Web优化转换失败: {}", e)),
-                };
+                errors.push(format!("{}: Web优化转换失败: {}", input_path, e));
             }
         }
     }
-    
-    
-    ProcessingResult {
-        success: true,
-        processed_files,
-        error: None,
+
+    if errors.is_empty() {
+        ProcessingResult { success: true, processed_files, error: None }
+    } else {
+        ProcessingResult {
+            success: false,
+            processed_files,
+            error: Some(errors.join("; ")),
+        }
     }
 }
 
@@ -236,8 +234,8 @@ fn determine_optimal_web_format(input_path: &str) -> Result<String> {
         _ => false,
     };
     
-    // 检查图片复杂度
-    let is_complex = img.width() * img.height() > 500_000; // 大于500K像素认为是复杂图片
+    // 检查图片复杂度（用 u64 相乘，避免超大图 width*height 溢出 u32）
+    let is_complex = (img.width() as u64) * (img.height() as u64) > 500_000; // 大于500K像素认为是复杂图片
     
     // 选择最佳格式
     if has_transparency {
@@ -368,13 +366,23 @@ fn optimize_image_for_png(img: &image::DynamicImage) -> image::DynamicImage {
     }
 }
 
-/// 计算图片中唯一颜色的数量
+/// 计算图片中唯一颜色的数量（采样上限保护）
+/// 超大图对全量像素建 HashSet 会造成内存与耗时失控；仅需判断是否 <=256 以决定是否转调色板，
+/// 故采样前 MAX_SAMPLE_PIXELS 个像素即可：一旦超过 256 色就提前返回，语义等价且开销有界。
 fn count_unique_colors(rgb_img: &image::RgbImage) -> usize {
     use std::collections::HashSet;
-    
+
+    const MAX_SAMPLE_PIXELS: usize = 200_000;
     let mut colors = HashSet::new();
-    for pixel in rgb_img.pixels() {
+    for (i, pixel) in rgb_img.pixels().enumerate() {
+        if i >= MAX_SAMPLE_PIXELS {
+            break;
+        }
         colors.insert((pixel[0], pixel[1], pixel[2]));
+        if colors.len() > 256 {
+            // 已确定超过调色板容量，无需继续统计
+            return colors.len();
+        }
     }
     colors.len()
 }

@@ -26,6 +26,7 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import { ProcessingSettings } from '../../types';
+import { isTauriEnv } from '../../utils/tauriEnv';
 
 interface WatermarkSettingsProps {
   settings: ProcessingSettings;
@@ -60,8 +61,8 @@ const WatermarkSettings: React.FC<WatermarkSettingsProps> = ({
       setLoadingFonts(true);
       try {
         // 检查是否在Tauri环境中
-        if (typeof window !== 'undefined' && '__TAURI__' in window) {
-          const { invoke } = await import('@tauri-apps/api/tauri');
+        if (isTauriEnv()) {
+          const { invoke } = await import('@tauri-apps/api/core');
           const fonts = await invoke('get_system_fonts') as string[];
           setSystemFonts(fonts);
         } else {
@@ -107,8 +108,8 @@ const WatermarkSettings: React.FC<WatermarkSettingsProps> = ({
   const handleSelectImage = async () => {
     try {
       // 在Tauri环境中使用文件选择器
-      if (typeof window !== 'undefined' && '__TAURI__' in window) {
-        const { open } = await import('@tauri-apps/api/dialog');
+      if (isTauriEnv()) {
+        const { open } = await import('@tauri-apps/plugin-dialog');
         const selected = await open({
           multiple: false,
           filters: [{

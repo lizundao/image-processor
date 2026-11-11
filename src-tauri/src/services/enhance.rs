@@ -4,8 +4,23 @@ use anyhow::Result;
 use image::{DynamicImage, GenericImageView, ImageFormat, Rgba, RgbaImage};
 use image::imageops::FilterType;
 use imageproc::filter::gaussian_blur_f32;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use chrono::Utc;
+
+/// 获取应用可写的临时预览目录。
+/// 优先使用系统应用数据目录（LOCALAPPDATA/APPDATA/XDG_DATA_HOME），
+/// 避免使用 current_exe() 所在目录——安装版位于 Program Files 时无写权限。
+fn preview_temp_dir() -> PathBuf {
+    let base = std::env::var_os("LOCALAPPDATA")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("APPDATA").map(PathBuf::from))
+        .or_else(|| std::env::var_os("XDG_DATA_HOME").map(PathBuf::from))
+        .or_else(|| {
+            std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".local").join("share"))
+        })
+        .unwrap_or_else(std::env::temp_dir);
+    base.join("image-processor").join("temp")
+}
 
 fn map_strength_to_params(strength: u32) -> (i32, f32, f32, f32, f32) {
 	let s = (strength.min(100) as f32) / 100.0;
@@ -149,12 +164,8 @@ pub async fn enhance_preview(
 	let random_id = format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis());
 	let suffix = format!("enh_preview_s{}", params.strength);
 
-	// 使用应用程序目录下的temp子目录
-	let app_dir = std::env::current_exe()
-		.ok()
-		.and_then(|exe| exe.parent().map(|p| p.to_path_buf()))
-		.unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
-	let out_dir = app_dir.join("temp");
+	// 使用应用数据目录下的 temp 子目录（安装版 Program Files 无写权限，故不放在 exe 旁）
+	let out_dir = preview_temp_dir();
 	std::fs::create_dir_all(&out_dir)?;
 	let out_path = out_dir.join(format!("temp_{}_{}_{}_{}.jpg", random_id, input_stem, timestamp, suffix));
 
@@ -169,8 +180,8 @@ pub async fn enhance_apply_batch(
 	global: GlobalSettings,
 ) -> ProcessingResult {
 	let mut processed_files: Vec<String> = Vec::new();
-	for path in input_paths.iter() {
-		match enhance_apply_one(path, &params, &global).await {
+	for (index, path) in input_paths.iter().enumerate() {
+		match enhance_apply_one(path, &params, &global, Some(index)).await {
 			Ok(out) => processed_files.push(out),
 			Err(e) => {
 				return ProcessingResult { success: false, processed_files, error: Some(e.to_string()) };
@@ -180,12 +191,17 @@ pub async fn enhance_apply_batch(
 	ProcessingResult { success: true, processed_files, error: None }
 }
 
-pub async fn enhance_apply_one(input_path: &str, params: &EnhanceSettings, global: &GlobalSettings) -> Result<String> {
+pub async fn enhance_apply_one(
+	input_path: &str,
+	params: &EnhanceSettings,
+	global: &GlobalSettings,
+	file_index: Option<usize>,
+) -> Result<String> {
 	validate_image_file(input_path)?;
 	let img = image::open(input_path)?;
 	let processed = process_pipeline(img, params);
 	let suffix = format!("enhanced_s{}", params.strength);
-	let out_path = generate_output_filename(input_path, &global.output_directory, &global.filename_pattern, &suffix, "jpg");
+	let out_path = generate_output_filename(input_path, global, &suffix, "jpg", file_index);
 	check_file_overwrite(&out_path, global.overwrite_existing)?;
 	ensure_output_directory(&out_path)?;
 	processed.save_with_format(&out_path, ImageFormat::Jpeg)?;
@@ -194,11 +210,7 @@ pub async fn enhance_apply_one(input_path: &str, params: &EnhanceSettings, globa
 
 /// 清理临时预览文件
 pub fn cleanup_preview_temp_files() -> Result<u32> {
-	let app_dir = std::env::current_exe()
-		.ok()
-		.and_then(|exe| exe.parent().map(|p| p.to_path_buf()))
-		.unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
-	let temp_dir = app_dir.join("temp");
+	let temp_dir = preview_temp_dir();
 
 	if !temp_dir.exists() {
 		return Ok(0);

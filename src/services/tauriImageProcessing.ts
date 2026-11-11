@@ -1,6 +1,7 @@
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@tauri-apps/api/core';
 import { ImageFile, ProcessingFunction, ProcessingSettings, GlobalSettings } from '../types';
 import { t } from '../i18n';
+import { isTauriEnv } from '../utils/tauriEnv';
 
 
 
@@ -18,12 +19,26 @@ interface ProcessingResult {
   error?: string;
 }
 
+function toTauriGlobalSettings(
+  globalSettings: GlobalSettings,
+  qualityOverride?: number
+) {
+  return {
+    output_directory: globalSettings.outputDirectory,
+    output_format: globalSettings.outputFormat,
+    quality: qualityOverride ?? globalSettings.quality,
+    filename_pattern: globalSettings.filenamePattern,
+    overwrite_existing: globalSettings.overwriteExisting,
+    create_subfolders: globalSettings.createSubfolders,
+  };
+}
+
 export class TauriImageProcessingService {
   /**
    * 检查是否在Tauri环境中
    */
   static isTauriEnvironment(): boolean {
-    return typeof window !== 'undefined' && '__TAURI__' in window;
+    return isTauriEnv();
   }
 
   /**
@@ -61,9 +76,9 @@ export class TauriImageProcessingService {
       };
     }
 
+    const inputPaths: string[] = [];
     try {
       // 准备输入文件路径
-      const inputPaths: string[] = [];
       for (let i = 0; i < images.length; i++) {
         const image = images[i];
 
@@ -83,9 +98,6 @@ export class TauriImageProcessingService {
 
       // 调用后端批量处理
       const result = await this.processBatch(inputPaths, functionName, settings, globalSettings);
-
-      // 清理临时文件
-      await this.cleanupTempFiles(inputPaths, images);
 
       if (result.success) {
         // 通知处理完成
@@ -134,6 +146,9 @@ export class TauriImageProcessingService {
         processedImages: [],
         error: error instanceof Error ? error.message : t('services.errors.unknownError') as string,
       };
+    } finally {
+      // 无论成功/失败都清理本次创建的临时文件，避免异常分支泄漏
+      await this.cleanupTempFiles(inputPaths, images);
     }
   }
 
@@ -144,14 +159,14 @@ export class TauriImageProcessingService {
     try {
       // 获取临时目录
       const { appDataDir, join } = await import('@tauri-apps/api/path');
-      const { writeBinaryFile, createDir, exists } = await import('@tauri-apps/api/fs');
+      const { writeFile, mkdir, exists } = await import('@tauri-apps/plugin-fs');
 
       const tempDir = await appDataDir();
       const tempImageDir = await join(tempDir, 'temp_images');
 
       // 确保临时目录存在
       if (!(await exists(tempImageDir))) {
-        await createDir(tempImageDir, { recursive: true });
+        await mkdir(tempImageDir, { recursive: true });
       }
 
       // 使用原始文件名，避免冲突时添加时间戳
@@ -182,7 +197,7 @@ export class TauriImageProcessingService {
       // 将File对象转换为Uint8Array并保存
       const arrayBuffer = await image.file.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
-      await writeBinaryFile(tempFilePath, uint8Array);
+      await writeFile(tempFilePath, uint8Array);
 
       return tempFilePath;
     } catch (error) {
@@ -227,14 +242,10 @@ export class TauriImageProcessingService {
             quality: compressQuality,
             format: globalSettings.outputFormat || 'original',
           },
-          globalSettings: {
-            output_directory: globalSettings.outputDirectory,
-            output_format: globalSettings.outputFormat,
-            quality: settings.compress?.quality || globalSettings.quality || 80,
-            filename_pattern: globalSettings.filenamePattern,
-            overwrite_existing: globalSettings.overwriteExisting,
-
-          },
+          globalSettings: toTauriGlobalSettings(
+            globalSettings,
+            settings.compress?.quality || globalSettings.quality || 80
+          ),
         });
 
       case 'watermark':
@@ -254,13 +265,7 @@ export class TauriImageProcessingService {
             image_path: settings.watermark?.imagePath,
             image_scale: settings.watermark?.imageScale || 1.0,
           },
-          globalSettings: {
-            output_directory: globalSettings.outputDirectory,
-            output_format: globalSettings.outputFormat,
-            quality: globalSettings.quality,
-            filename_pattern: globalSettings.filenamePattern,
-            overwrite_existing: globalSettings.overwriteExisting,
-          },
+          globalSettings: toTauriGlobalSettings(globalSettings),
         });
 
       case 'convert':
@@ -275,13 +280,7 @@ export class TauriImageProcessingService {
             compression_level: settings.convert?.compressionLevel || 9, // 默认使用最高压缩
             progressive: settings.convert?.progressive || false,
           },
-          globalSettings: {
-            output_directory: globalSettings.outputDirectory,
-            output_format: globalSettings.outputFormat,
-            quality: globalSettings.quality,
-            filename_pattern: globalSettings.filenamePattern,
-            overwrite_existing: globalSettings.overwriteExisting,
-          },
+          globalSettings: toTauriGlobalSettings(globalSettings),
         });
 
       case 'resize':
@@ -291,13 +290,7 @@ export class TauriImageProcessingService {
             width: settings.resize?.width,
             height: settings.resize?.height,
           },
-          globalSettings: {
-            output_directory: globalSettings.outputDirectory,
-            output_format: globalSettings.outputFormat,
-            quality: globalSettings.quality,
-            filename_pattern: globalSettings.filenamePattern,
-            overwrite_existing: globalSettings.overwriteExisting,
-          },
+          globalSettings: toTauriGlobalSettings(globalSettings),
         });
 
       case 'crop':
@@ -315,13 +308,7 @@ export class TauriImageProcessingService {
             output_format: settings.crop?.outputFormat || 'JPEG',
             quality: settings.crop?.quality || 85,
           },
-          globalSettings: {
-            output_directory: globalSettings.outputDirectory,
-            output_format: globalSettings.outputFormat,
-            quality: globalSettings.quality,
-            filename_pattern: globalSettings.filenamePattern,
-            overwrite_existing: globalSettings.overwriteExisting,
-          },
+          globalSettings: toTauriGlobalSettings(globalSettings),
         });
 
       case 'rotate':
@@ -330,13 +317,7 @@ export class TauriImageProcessingService {
           settings: {
             angle: settings.rotate?.angle || 0,
           },
-          globalSettings: {
-            output_directory: globalSettings.outputDirectory,
-            output_format: globalSettings.outputFormat,
-            quality: globalSettings.quality,
-            filename_pattern: globalSettings.filenamePattern,
-            overwrite_existing: globalSettings.overwriteExisting,
-          },
+          globalSettings: toTauriGlobalSettings(globalSettings),
         });
 
       case 'flip':
@@ -346,13 +327,16 @@ export class TauriImageProcessingService {
             horizontal: settings.flip?.horizontal || false,
             vertical: settings.flip?.vertical || false,
           },
-          globalSettings: {
-            output_directory: globalSettings.outputDirectory,
-            output_format: globalSettings.outputFormat,
-            quality: globalSettings.quality,
-            filename_pattern: globalSettings.filenamePattern,
-            overwrite_existing: globalSettings.overwriteExisting,
+          globalSettings: toTauriGlobalSettings(globalSettings),
+        });
+
+      case 'brightness':
+        return await invoke('adjust_brightness', {
+          inputPaths: inputPaths,
+          settings: {
+            value: settings.brightness?.value ?? 0,
           },
+          globalSettings: toTauriGlobalSettings(globalSettings),
         });
 
       case 'border':
@@ -369,13 +353,7 @@ export class TauriImageProcessingService {
         return await invoke('add_border', {
           inputPaths: inputPaths,
           settings: borderSettings,
-          globalSettings: {
-            output_directory: globalSettings.outputDirectory,
-            output_format: globalSettings.outputFormat,
-            quality: globalSettings.quality,
-            filename_pattern: globalSettings.filenamePattern,
-            overwrite_existing: globalSettings.overwriteExisting,
-          },
+          globalSettings: toTauriGlobalSettings(globalSettings),
         });
 
       case 'rounded':
@@ -386,13 +364,7 @@ export class TauriImageProcessingService {
         return await invoke('add_rounded_corners', {
           inputPaths: inputPaths,
           settings: roundedSettings,
-          globalSettings: {
-            output_directory: globalSettings.outputDirectory,
-            output_format: globalSettings.outputFormat,
-            quality: globalSettings.quality,
-            filename_pattern: globalSettings.filenamePattern,
-            overwrite_existing: globalSettings.overwriteExisting,
-          },
+          globalSettings: toTauriGlobalSettings(globalSettings),
         });
 
       case 'merge':
@@ -404,13 +376,7 @@ export class TauriImageProcessingService {
         return await invoke('merge_images', {
           inputPaths: inputPaths,
           settings: mergeSettings,
-          globalSettings: {
-            output_directory: globalSettings.outputDirectory,
-            output_format: globalSettings.outputFormat,
-            quality: globalSettings.quality,
-            filename_pattern: globalSettings.filenamePattern,
-            overwrite_existing: globalSettings.overwriteExisting,
-          },
+          globalSettings: toTauriGlobalSettings(globalSettings),
         });
 
       case 'gif':
@@ -423,13 +389,7 @@ export class TauriImageProcessingService {
         return await invoke('create_gif', {
           inputPaths: inputPaths,
           settings: gifSettings,
-          globalSettings: {
-            output_directory: globalSettings.outputDirectory,
-            output_format: globalSettings.outputFormat,
-            quality: globalSettings.quality,
-            filename_pattern: globalSettings.filenamePattern,
-            overwrite_existing: globalSettings.overwriteExisting,
-          },
+          globalSettings: toTauriGlobalSettings(globalSettings),
         });
 
       case 'enhance':
@@ -444,13 +404,7 @@ export class TauriImageProcessingService {
         return await invoke('enhance_images', {
           inputPaths: inputPaths,
           settings: enhanceSettings,
-          globalSettings: {
-            output_directory: globalSettings.outputDirectory,
-            output_format: globalSettings.outputFormat,
-            quality: globalSettings.quality,
-            filename_pattern: globalSettings.filenamePattern,
-            overwrite_existing: globalSettings.overwriteExisting,
-          },
+          globalSettings: toTauriGlobalSettings(globalSettings),
         });
 
       case 'gridSlice':
@@ -466,13 +420,7 @@ export class TauriImageProcessingService {
         return await invoke('grid_slice_images', {
           inputPaths: inputPaths,
           settings: gridSliceSettings,
-          globalSettings: {
-            output_directory: globalSettings.outputDirectory,
-            output_format: globalSettings.outputFormat,
-            quality: globalSettings.quality,
-            filename_pattern: globalSettings.filenamePattern,
-            overwrite_existing: globalSettings.overwriteExisting,
-          },
+          globalSettings: toTauriGlobalSettings(globalSettings),
         });
 
       default:
@@ -493,7 +441,7 @@ export class TauriImageProcessingService {
    */
   private static async cleanupTempFiles(inputPaths: string[], originalImages: ImageFile[]) {
     try {
-      const { removeFile } = await import('@tauri-apps/api/fs');
+      const { remove } = await import('@tauri-apps/plugin-fs');
 
       for (let i = 0; i < inputPaths.length; i++) {
         const inputPath = inputPaths[i];
@@ -502,7 +450,7 @@ export class TauriImageProcessingService {
         // 只删除我们创建的临时文件（blob转换的文件）
         if (originalImage.url.startsWith('blob:') && inputPath.includes('temp_images')) {
           try {
-            await removeFile(inputPath);
+            await remove(inputPath);
           } catch (error) {
             // 忽略清理错误
           }
@@ -567,7 +515,7 @@ export class TauriImageProcessingService {
       settings: mapped,
       previewMaxSize,
     });
-    const { convertFileSrc } = await import('@tauri-apps/api/tauri');
+    const { convertFileSrc } = await import('@tauri-apps/api/core');
     const url = convertFileSrc(res[0]);
     return { previewPath: url, width: res[1], height: res[2] };
   }
@@ -582,8 +530,7 @@ export class TauriImageProcessingService {
     try {
       const count = await invoke<number>('cleanup_preview_files');
       return count;
-    } catch (error) {
-      console.warn('清理临时文件失败:', error);
+    } catch {
       return 0;
     }
   }

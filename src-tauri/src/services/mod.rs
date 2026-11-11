@@ -24,9 +24,7 @@ pub use crop::*;
 // 其他服务暂时不导出，避免未使用警告
 pub use rotate::*;
 pub use flip::*;
-// pub use brightness::*;
-// pub use contrast::*;
-// pub use saturation::*;
+pub use brightness::*;
 pub use border::*;
 // pub use rounded::*;
 // pub use enhance::*;

@@ -12,6 +12,7 @@ pub async fn add_watermark_single(
     input_path: &str,
     settings: &WatermarkSettings,
     global_settings: &GlobalSettings,
+    file_index: Option<usize>,
 ) -> Result<String> {
     
     // 验证输入
@@ -36,10 +37,10 @@ pub async fn add_watermark_single(
     // 生成输出文件名
           let output_path = generate_output_filename(
         input_path,
-        &global_settings.output_directory,
-        &global_settings.filename_pattern,
+        global_settings,
         "watermarked",
         extension,
+        file_index,
     );
     
     // 检查文件覆盖
@@ -126,9 +127,9 @@ pub async fn add_watermark_batch(
     
     let mut processed_files = Vec::new();
     
-    for (_index, input_path) in input_paths.iter().enumerate() {
+    for (index, input_path) in input_paths.iter().enumerate() {
         
-        match add_watermark_single(input_path, &settings, &global_settings).await {
+        match add_watermark_single(input_path, &settings, &global_settings, Some(index)).await {
             Ok(output_path) => {
                 processed_files.push(output_path);
             }
@@ -336,10 +337,10 @@ pub async fn add_image_watermark(
     // 生成输出文件名
     let output_path = generate_output_filename(
         input_path,
-        &global_settings.output_directory,
-        &global_settings.filename_pattern,
+        global_settings,
         "img_watermarked",
         "png",
+        None,
     );
     
     // 检查文件覆盖

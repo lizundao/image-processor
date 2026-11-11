@@ -18,17 +18,14 @@ const GifSettings: React.FC<GifSettingsProps> = ({ settings, onChange }) => {
   const boxBg = useColorModeValue('gray.50', 'gray.800');
 
   const handleFpsChange = (fps: number) => {
-    console.log('🎬 [GIF设置] 帧率改变为:', fps);
     onChange({ fps, loop_count: current.loop_count || 0, quality: current.quality || 80 });
   };
 
   const handleLoopCountChange = (loop_count: number) => {
-    console.log('🎬 [GIF设置] 循环次数改变为:', loop_count);
     onChange({ fps: current.fps || 10, loop_count, quality: current.quality || 80 });
   };
 
   const handleQualityChange = (quality: number) => {
-    console.log('🎬 [GIF设置] 输出质量改变为:', quality);
     onChange({ fps: current.fps || 10, loop_count: current.loop_count || 0, quality });
   };
 

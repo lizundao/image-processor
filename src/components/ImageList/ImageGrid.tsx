@@ -14,6 +14,8 @@ import {
 import { CloseIcon, CheckIcon, WarningIcon, DragHandleIcon } from '@chakra-ui/icons';
 import { ImageFile } from '../../types';
 import { useTranslation } from 'react-i18next';
+import { useImageDisplayUrl } from '../../hooks/useImageDisplayUrl';
+import { formatFileSize } from '../../utils/fileUtils';
 import {
   DndContext,
   closestCenter,
@@ -50,6 +52,7 @@ const SortableImageItem: React.FC<{
   selectedImage: ImageFile | null;
 }> = ({ image, onImageRemove, onImageSelect, selectedImage }) => {
   const { t } = useTranslation();
+  const displayUrl = useImageDisplayUrl(image.url);
   const {
     attributes,
     listeners,
@@ -109,11 +112,12 @@ const SortableImageItem: React.FC<{
       </Box>
 
       <Image
-        src={image.url}
+        src={displayUrl}
         alt={image.name}
         w="full"
         h="120px"
         objectFit="cover"
+        fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='120' viewBox='0 0 200 120'%3E%3Crect fill='%23edf2f7' width='200' height='120'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23a0aec0' font-size='12'%3E%E5%8A%A0%E8%BD%BD%E4%B8%AD...%3C/text%3E%3C/svg%3E"
       />
 
       {/* 处理状态覆盖层 */}
@@ -170,7 +174,7 @@ const SortableImageItem: React.FC<{
           )}
         </Text>
         <Text fontSize="xs" color="gray.500" noOfLines={1}>
-          {(image.size / 1024 / 1024).toFixed(2)} MB
+          {image.size > 0 ? formatFileSize(image.size) : '--'}
         </Text>
       </Box>
 

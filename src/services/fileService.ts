@@ -1,10 +1,11 @@
 import { GlobalSettings, ImageFile } from '../types';
 
 // 导入 Tauri API
-import { writeBinaryFile, createDir, exists } from '@tauri-apps/api/fs';
+import { writeFile, mkdir, exists } from '@tauri-apps/plugin-fs';
 import { join } from '@tauri-apps/api/path';
-import { open } from '@tauri-apps/api/shell';
+import { open } from '@tauri-apps/plugin-shell';
 import { t } from '../i18n';
+import { isTauriEnv } from '../utils/tauriEnv';
 
 export interface SaveResult {
   success: boolean;
@@ -31,7 +32,7 @@ export class FileService {
       // 确保输出目录存在
       const outputDirExists = await exists(globalSettings.outputDirectory);
       if (!outputDirExists) {
-        await createDir(globalSettings.outputDirectory, { recursive: true });
+        await mkdir(globalSettings.outputDirectory, { recursive: true });
       }
 
       // 处理每个图片文件
@@ -61,7 +62,7 @@ export class FileService {
 
 
           // 保存文件
-          await writeBinaryFile(filePath, uint8Array);
+          await writeFile(filePath, uint8Array);
           savedFiles.push(filePath);
 
         } catch (fileError) {
@@ -142,7 +143,7 @@ export class FileService {
    * 检查是否在 Tauri 环境中
    */
   static isTauriEnvironment(): boolean {
-    return typeof window !== 'undefined' && '__TAURI__' in window;
+    return isTauriEnv();
   }
 
   /**

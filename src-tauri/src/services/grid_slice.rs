@@ -10,7 +10,17 @@ pub async fn grid_slice_images(
     global_settings: GlobalSettings,
 ) -> ProcessingResult {
 
+    // 行列数为 0 会导致 width / columns 除零、rows - 1 下溢，panic=abort 下直接闪退
+    if settings.rows == 0 || settings.columns == 0 {
+        return ProcessingResult {
+            success: false,
+            processed_files: vec![],
+            error: Some("宫格切图的行数与列数都必须至少为 1".to_string()),
+        };
+    }
+
     let mut processed_files = Vec::new();
+    let mut errors: Vec<String> = Vec::new();
     let mut total_original_size = 0u64;
     let mut total_processed_size = 0u64;
 
@@ -21,7 +31,7 @@ pub async fn grid_slice_images(
                 // 统计文件大小
                 if let Ok(original) = crate::utils::get_file_size(input_path) {
                     total_original_size += original;
-                    
+
                     // 统计所有切片的文件大小
                     for output_path in &output_paths {
                         if let Ok(processed) = crate::utils::get_file_size(output_path) {
@@ -33,11 +43,7 @@ pub async fn grid_slice_images(
                 processed_files.extend(output_paths);
             }
             Err(e) => {
-                return ProcessingResult {
-                    success: false,
-                    processed_files: vec![],
-                    error: Some(format!("宫格切图失败: {}", e)),
-                };
+                errors.push(format!("{}: {}", input_path, e));
             }
         }
     }
@@ -50,10 +56,14 @@ pub async fn grid_slice_images(
     };
 
 
-    ProcessingResult {
-        success: true,
-        processed_files,
-        error: None,
+    if errors.is_empty() {
+        ProcessingResult { success: true, processed_files, error: None }
+    } else {
+        ProcessingResult {
+            success: false,
+            processed_files,
+            error: Some(errors.join("; ")),
+        }
     }
 }
 
@@ -68,10 +78,21 @@ async fn grid_slice_single_image(
     let img = image::open(input_path)?;
     let (width, height) = img.dimensions();
 
+    // 防御性校验：即使被单独调用，也不让行列数为 0 触发除零/下溢
+    if settings.rows == 0 || settings.columns == 0 {
+        return Err(anyhow::anyhow!("宫格切图的行数与列数都必须至少为 1"));
+    }
+    // 行列数超过对应边长会产生 0 像素切片，crop_imm 会 panic
+    if settings.columns > width || settings.rows > height {
+        return Err(anyhow::anyhow!(
+            "宫格设置超出图片尺寸（图片 {}x{}，设置 {} 行 × {} 列），切片尺寸不能为 0",
+            width, height, settings.rows, settings.columns
+        ));
+    }
 
     // 计算每个切片的尺寸
-    let slice_width = width / settings.columns as u32;
-    let slice_height = height / settings.rows as u32;
+    let slice_width = width / settings.columns;
+    let slice_height = height / settings.rows;
 
 
     // 确定输出格式
@@ -87,7 +108,7 @@ async fn grid_slice_single_image(
     // 生成输出文件名基础部分（去掉临时文件时间戳）
     let path = Path::new(input_path);
     let stem = path.file_stem().unwrap_or_default().to_str().unwrap_or("image");
-    
+
     // 如果文件名包含时间戳（格式：原文件名_时间戳），去掉时间戳部分
     let clean_stem = if stem.contains('_') {
         // 检查是否以数字结尾（时间戳格式）
@@ -125,11 +146,11 @@ async fn grid_slice_single_image(
                 .replace("{col}", &(col + 1).to_string());
 
             let output_filename = format!("{}_{}.{}", clean_stem, slice_name, output_format);
-            let output_path = if global_settings.output_directory.is_empty() {
+            let output_dir = crate::utils::resolve_output_directory(global_settings, "grid_slice");
+            let output_path = if output_dir.is_empty() {
                 output_filename
             } else {
-                let output_path = Path::new(&global_settings.output_directory).join(&output_filename);
-                output_path.to_string_lossy().to_string()
+                Path::new(&output_dir).join(&output_filename).to_string_lossy().to_string()
             };
 
             // 检查文件覆盖
@@ -168,11 +189,11 @@ async fn grid_slice_single_image(
     // 如果设置包含原图，复制原图（去掉时间戳）
     if settings.include_original {
         let original_filename = format!("{}_original.{}", clean_stem, output_format);
-        let original_output_path = if global_settings.output_directory.is_empty() {
+        let output_dir = crate::utils::resolve_output_directory(global_settings, "grid_slice");
+        let original_output_path = if output_dir.is_empty() {
             original_filename
         } else {
-            let output_path = Path::new(&global_settings.output_directory).join(&original_filename);
-            output_path.to_string_lossy().to_string()
+            Path::new(&output_dir).join(&original_filename).to_string_lossy().to_string()
         };
 
         // 检查文件覆盖
@@ -210,4 +231,4 @@ async fn grid_slice_single_image(
 
 
     Ok(output_paths)
-} 
+}

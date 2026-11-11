@@ -28,7 +28,6 @@ const RoundedSettings: React.FC<RoundedSettingsProps> = ({ settings, onChange })
   const boxBg = useColorModeValue('gray.50', 'gray.800');
 
   const handleRadiusChange = (radius: number) => {
-    console.log('🔵 [圆角设置] 圆角值改变为:', radius);
     onChange({ radius });
   };
 

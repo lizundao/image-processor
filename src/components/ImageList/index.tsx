@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   VStack,
   HStack,
@@ -13,6 +13,8 @@ import ImageDropzone from './ImageDropzone';
 import ImageGrid from './ImageGrid';
 import ImageToolbar from './ImageToolbar';
 import { useTranslation } from 'react-i18next';
+import { createImageFileFromBrowserFile, createImageFilesFromPaths } from '../../utils/createImageFileFromPath';
+import { isTauriEnv } from '../../utils/tauriEnv';
 
 interface ImageListProps {
   images: ImageFile[];
@@ -25,8 +27,6 @@ interface ImageListProps {
   selectedImage: ImageFile | null;
   currentFunction: ProcessingFunction;
   settings: ProcessingSettings;
-  colorMode: string;
-  toggleColorMode: () => void;
 }
 
 const ImageList: React.FC<ImageListProps> = ({
@@ -44,7 +44,30 @@ const ImageList: React.FC<ImageListProps> = ({
   const { t } = useTranslation();
   const borderColor = useColorModeValue('gray.200', 'gray.700');
 
+  // Tauri 窗口级拖放：直接使用文件路径，避免 blob 临时文件
+  useEffect(() => {
+    if (!isTauriEnv()) {
+      return;
+    }
 
+    let unlistenDrop: (() => void) | undefined;
+
+    const setup = async () => {
+      const { listen } = await import('@tauri-apps/api/event');
+      unlistenDrop = await listen<string[]>('tauri://file-drop', async (event) => {
+        const newImages = await createImageFilesFromPaths(event.payload);
+        if (newImages.length > 0) {
+          onImageAdd(newImages);
+        }
+      });
+    };
+
+    setup();
+
+    return () => {
+      unlistenDrop?.();
+    };
+  }, [onImageAdd]);
 
   return (
     <VStack spacing={0} align="stretch" h="full">
@@ -69,15 +92,7 @@ const ImageList: React.FC<ImageListProps> = ({
                 input.accept = 'image/*';
                 input.onchange = (e) => {
                   const files = Array.from((e.target as HTMLInputElement).files || []);
-                  const newImages: ImageFile[] = files.map((file) => ({
-                    id: Math.random().toString(36).substr(2, 9),
-                    name: file.name,
-                    size: file.size,
-                    type: file.type,
-                    url: URL.createObjectURL(file),
-                    file,
-                  }));
-                  onImageAdd(newImages);
+                  onImageAdd(files.map(createImageFileFromBrowserFile));
                 };
                 input.click();
               }}

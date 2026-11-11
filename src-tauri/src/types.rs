@@ -178,6 +178,8 @@ pub struct GlobalSettings {
     pub quality: u8,           // 默认质量
     pub filename_pattern: String,
     pub overwrite_existing: bool,
+    #[serde(default)]
+    pub create_subfolders: bool,
 }
 
 // 批处理任务

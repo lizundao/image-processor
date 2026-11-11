@@ -1,165 +1,98 @@
-# 图片处理器 (Image Processor)
+# 图片处理器（Image Processor）
 
-一个功能强大的桌面端图片处理应用，基于 React + Tauri + Rust 技术栈构建，提供专业的图片编辑和处理功能。
+基于 Tauri 2 的离线桌面端批量图片处理工具：React 18 + TypeScript 前端，Rust 后端处理像素逻辑。所有图片均在本地处理，**不联网、不上传、不收集任何数据**。
 
-## ✨ 功能特性
+> **离线 · 开源（MIT）· 本地处理** · 官网：[inkdot.cn](https://inkdot.cn)
 
-### 🖼️ 图片压缩
-- 支持质量调节（1-100%）
-- 多种输出格式选择
-- 批量处理支持
+## 功能
 
-### 💧 水印功能
-- **文字水印**：系统字体选择、字体大小/颜色/粗细、9种位置、透明度控制、精确边距
-- **图片水印**：PNG/JPG支持、缩放调节、位置控制
+| 类别 | 功能 |
+|------|------|
+| **基础处理** | 压缩、格式转换、等比缩放、旋转、翻转 |
+| **裁剪** | 比例裁剪、像素裁剪、手动框选裁剪 |
+| **调色** | 亮度调整、一键美化（曝光 / 白平衡 / 对比度 / 锐化） |
+| **装饰** | 文字 / 图片水印、边框（实线 / 虚线 / 点线）、圆角 |
+| **拼合** | 水平 / 垂直合并、GIF 动画合成、宫格切图 |
 
-### 🔄 格式转换
-- 支持多种图片格式转换
-- 保持图片质量
-- 批量转换支持
+- 批量导入、拖拽排序、统一参数批量输出
+- 中 / 英双语；浅色 / 深色 / 跟随系统主题
+- 输出目录可选按功能分子文件夹，文件名支持 `{name}` `{timestamp}` `{index}` 占位符
 
-### 📏 尺寸调整
-- **基础调整**：自定义宽高、保持宽高比、多种缩放模式
-- **高级设置**：5种缩放算法、放大控制、尺寸限制
-- **智能预设**：Web优化、打印优化、缩略图、社交媒体
-- **百分比缩放**：按比例快速调整尺寸
-- **批量生成**：响应式尺寸、社交媒体尺寸、缩略图尺寸
+## 技术栈
 
-### ✂️ 图片裁剪
-- **手动裁剪**：精确指定坐标和尺寸
-- **智能裁剪**：自动计算最佳裁剪区域
-- **宽高比裁剪**：保持指定比例进行裁剪
-- **预设比例**：正方形、16:9、4:3、黄金比例等
-- **社交媒体预设**：Instagram、Facebook、Twitter等平台尺寸
-- **实时预览**：裁剪前可预览效果
+- **前端**：React 18 + TypeScript + Chakra UI + Vite 6
+- **后端**：Rust + Tauri 2 + [`image`](https://docs.rs/image) + `imageproc` + `webp` + `gif` + `png` + `fontdb`
+- **模块**：`compress` / `watermark` / `convert` / `resize_simple` / `crop` / `rotate` / `flip` / `brightness` / `border` / `rounded` / `merge` / `gif` / `enhance` / `grid_slice`
 
-### 🔄 图片旋转与翻转
-- 90度旋转功能
-- 水平和垂直翻转
+## 环境要求
 
-### 🖼️ 边框与圆角
-- **边框功能**：自定义边框样式、宽度、颜色、透明度
-- **圆角处理**：可调节圆角半径
-
-### 🔗 图片合并
-- 多图片合并功能
-- 支持水平和垂直排列
-- 可调节图片间距
-
-### 🎬 GIF合成
-- 创建动态GIF
-- 支持帧率调节
-- 循环播放控制
-
-### 🎨 图片增强
-- **亮度调整**：图片亮度调节
-- **对比度调整**：对比度增强
-- **饱和度调整**：色彩饱和度调节
-- **自动曝光**：智能曝光调整
-- **自动白平衡**：自动色彩校正
-
-## 🛠️ 技术栈
-
-- **前端框架**: React 18 + TypeScript
-- **UI组件库**: Chakra UI
-- **桌面应用**: Tauri
-- **构建工具**: Vite
-- **状态管理**: React Hooks
-- **后端语言**: Rust
-- **图片处理**: image + imageproc + rusttype
-- **字体管理**: fontdb (系统字体扫描)
-- **文件处理**: Tauri文件系统API
-
-## 📦 安装使用
-
-### 环境要求
-
-- Node.js 16+
+- Node.js 18+
 - Rust 1.70+
-- 操作系统: Windows, macOS, Linux
+- [Tauri 2 前置要求](https://v2.tauri.app/start/prerequisites/)（Windows 需 WebView2、VS C++ 构建工具）
 
-### 快速开始
-
-1. **克隆项目**
-   ```bash
-   git clone https://github.com/lizundao/image-processing.git
-   cd image-processing
-   ```
-
-2. **安装依赖**
-   ```bash
-   npm install
-   ```
-
-3. **启动开发环境**
-   ```bash
-   npm run dev:tauri
-   ```
-
-4. **构建应用**
-   ```bash
-   npm run build:tauri
-   ```
-
-## 🏗️ 项目结构
-
-```
-image-processing/
-├── src/                    # React前端源码
-│   ├── components/         # React组件
-│   │   ├── FunctionPanel/  # 功能设置面板
-│   │   ├── ImageList/      # 图片列表管理
-│   │   └── Navigation.tsx  # 导航组件
-│   ├── services/           # 服务层
-│   ├── utils/              # 工具函数
-│   ├── types.ts            # TypeScript类型定义
-│   └── App.tsx             # 主应用组件
-├── src-tauri/              # Rust后端源码
-│   ├── src/
-│   │   ├── commands/       # Tauri命令
-│   │   ├── services/       # 业务逻辑
-│   │   └── main.rs         # 主程序入口
-│   └── Cargo.toml          # Rust依赖配置
-└── package.json            # Node.js依赖配置
-```
-
-## 🚀 开发指南
-
-### 常用命令
+## 本地开发
 
 ```bash
-# 开发模式
-npm run dev:tauri
-
-# 构建应用
-npm run build:tauri
-
-# 预览构建结果
-npm run preview
+npm install
+npm run dev:tauri      # 开发模式（热更新）
+npm run build          # 仅构建前端
+npm run build:tauri    # 完整打包（输出在 src-tauri/target/release/bundle/）
+npm run release:portable  # 编译 + 绿色版 zip（推荐发布）
 ```
 
-### 代码规范
+打包产物：
 
-- 使用 TypeScript 进行类型检查
-- 遵循 React 最佳实践
-- 使用 Chakra UI 组件库
-- Rust 代码遵循 Rust 命名规范
+- **绿色版**：`release/ImageProcessor-1.0.0-portable-win-x64.zip`（含 exe + 用户文档 + 许可）
+- **安装版**：`src-tauri/target/release/bundle/nsis/图片处理器_1.0.0_x64-setup.exe`
 
-## 📄 许可证
+详细打包说明见 [docs/BUILD.md](docs/BUILD.md)。
 
-本项目采用 [MIT 许可证](LICENSE) 开源。
+## 下载（v1.0.0）
 
-## 🤝 贡献
+从 [GitHub Releases](https://github.com/lizundao/image-processor/releases) 获取：
 
-欢迎提交 Issue 和 Pull Request！
+| 平台 | 文件 | 说明 |
+|------|------|------|
+| Windows | `ImageProcessor-1.0.0-setup-win-x64.exe` | 安装版，当前用户安装，免管理员权限 |
+| Windows | `ImageProcessor-1.0.0-portable-win-x64.zip` | 绿色版，解压即用，不写注册表 |
+| macOS | `ImageProcessor-1.0.0-aarch64.dmg` | Apple Silicon（未签名，见下方说明） |
 
-## 📞 联系方式
+> 未签名程序首次运行会触发 Windows SmartScreen / macOS Gatekeeper 提示，处理方式见 [发布说明](docs/RELEASE.md) 与 [代码审核报告](docs/代码审核报告.md)。
 
-如有问题或建议，请通过以下方式联系：
+## 使用
 
-- GitHub Issues: [提交问题](https://github.com/lizundao/image-processing/issues)
-- 项目地址: [https://github.com/lizundao/image-processing](https://github.com/lizundao/image-processing)
+1. 在 **设置 → 输出设置** 中指定**输出目录**（必填）
+2. 拖放或选择图片（支持窗口级拖放）
+3. 左侧选择功能，中间配置参数，右侧为图片列表（GIF / 合并时可拖拽排序）
+4. 点击「开始处理」
 
----
+## 文档
 
-⭐ 如果这个项目对你有帮助，请给它一个星标！
+- [用户手册 / 发布说明](docs/RELEASE.md) — 安装、教程、FAQ
+- [打包指南](docs/BUILD.md) — 环境准备、产物路径、常见问题
+- [代码审核报告](docs/代码审核报告.md) — 安全加固、崩溃边界、Tauri 2 升级记录
+
+## 项目结构
+
+```
+images/
+├── index.html                 # 应用壳
+├── src/                       # React 前端
+│   ├── components/            # UI 组件（标题栏 / 功能面板 / 图片列表 / 对话框）
+│   ├── services/              # 前端服务层（Tauri 调用封装、i18n）
+│   ├── i18n/locales/          # 中英语言包
+│   └── utils/                 # 环境检测、显示 URL、输出目录
+├── docs/                      # 审核报告 / 发布说明 / 打包指南
+└── src-tauri/src/
+    ├── lib.rs                 # Tauri 入口 + 插件注册 + 命令表
+    ├── commands/              # IPC 命令层
+    ├── services/              # 图片处理核心逻辑
+    └── utils.rs               # 路径、颜色、格式等工具
+```
+
+## 许可证与合规
+
+- **本项目**：[MIT License](LICENSE) © inkdot
+- **第三方组件**：见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)
+- **隐私**：完全离线运行，不收集、不上传、不追踪任何数据
+- **使用**：依据 MIT 许可开放，当前版本可自由使用

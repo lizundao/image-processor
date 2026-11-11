@@ -1,19 +1,26 @@
 [package]
 name = "image-processor"
 version = "1.0.0"
-description = "A powerful desktop image processing application built with Tauri + Rust"
-authors = ["lizundao <277059707@qq.com>"]
+description = "离线桌面端批量图片处理工具"
+authors = ["inkdot"]
 license = "MIT"
-repository = "https://github.com/lizundao/image-processing"
+homepage = "https://inkdot.cn"
 edition = "2021"
+
+[lib]
+name = "image_processor_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "1.5", features = [] }
+tauri-build = { version = "2", features = ["codegen"] }
 
 [dependencies]
-tauri = { version = "1.5", features = [ "window-set-size", "window-set-max-size", "fs-write-file", "fs-read-file", "window-set-resizable", "fs-read-dir", "fs-copy-file", "fs-remove-dir", "window-set-focus", "fs-create-dir", "dialog-message", "dialog-save", "protocol-asset", "dialog-open", "fs-remove-file", "fs-exists", "fs-rename-file", "window-set-title", "window-set-min-size", "path-all", "shell-open"] }
+tauri = { version = "2", features = ["protocol-asset"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-shell = "2"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 image = "0.24"
@@ -29,9 +36,17 @@ webp = "0.2"
 png = "0.17"
 
 [features]
-# this feature is used for production builds or when `devPath` points to the filesystem
+# 生产构建 / frontendDist 指向文件系统时必须启用
 # DO NOT REMOVE!!
+default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
 
 # 开发模式优化配置
 [profile.dev]

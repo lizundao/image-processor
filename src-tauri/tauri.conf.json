@@ -1,93 +1,73 @@
 {
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "图片处理器",
+  "version": "1.0.0",
+  "identifier": "com.image-processor.app",
   "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
     "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build",
-    "devPath": "http://localhost:1420",
-    "distDir": "../dist",
-    "withGlobalTauri": false
+    "beforeBuildCommand": "npm run build"
   },
-  "package": {
-    "productName": "Image Processor",
-    "version": "0.0.0"
-  },
-  "tauri": {
-    "allowlist": {
-      "all": false,
-      "shell": {
-        "all": false,
-        "open": true
-      },
-      "fs": {
-        "all": false,
-        "readFile": true,
-        "writeFile": true,
-        "readDir": true,
-        "copyFile": true,
-        "createDir": true,
-        "removeDir": true,
-        "removeFile": true,
-        "renameFile": true,
-        "exists": true,
-        "scope": ["$APPDATA", "$APPDATA/**", "$DESKTOP", "$DESKTOP/**", "$DOCUMENT", "$DOCUMENT/**", "$DOWNLOAD", "$DOWNLOAD/**", "$PICTURE", "$PICTURE/**", "$HOME", "$HOME/**"]
-      },
-      "window": {
-        "all": false,
-        "setTitle": true,
-        "setSize": true,
-        "setMinSize": true,
-        "setMaxSize": true,
-        "setResizable": true,
-        "setFocus": true
-      },
-      "dialog": {
-        "all": false,
-        "open": true,
-        "save": true,
-        "message": true
-      },
-      "protocol": {
-        "all": false,
-        "asset": true,
-        "assetScope": ["$APPDATA", "$APPDATA/**"]
-      },
-      "path": {
-        "all": true
-      }
-    },
-    "bundle": {
-      "active": true,
-      "targets": "all",
-      "identifier": "com.image-processor.dev",
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ]
-    },
-    "security": {
-      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws://localhost:*",
-      "dangerousRemoteDomainIpcAccess": [
-        {
-          "domain": "localhost",
-          "windows": ["main"],
-          "enableTauriAPI": true
-        }
-      ],
-      "dangerousUseHttpScheme": true
-    },
+  "app": {
+    "withGlobalTauri": false,
     "windows": [
       {
+        "label": "main",
         "fullscreen": false,
         "resizable": true,
-        "title": "Image Processor",
+        "title": "图片处理器",
         "width": 1200,
         "height": 800,
         "minWidth": 800,
         "minHeight": 600,
-        "fileDropEnabled": false
+        "center": true,
+        "decorations": false,
+        "dragDropEnabled": true
       }
-    ]
+    ],
+    "security": {
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$APPDATA/**",
+          "$APPLOCALDATA/**",
+          "$DESKTOP/**",
+          "$DOCUMENT/**",
+          "$DOWNLOAD/**",
+          "$PICTURE/**",
+          "$HOME/**",
+          "$TEMP/**"
+        ]
+      },
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: asset:; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+      "devCsp": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: asset:; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost ws://localhost:1420 http://localhost:1420 ws://127.0.0.1:1420 http://127.0.0.1:1420; worker-src 'self' blob:; object-src 'none'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "publisher": "inkdot",
+    "targets": ["nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "displayLanguageSelector": false,
+        "languages": ["SimpChinese", "English"],
+        "installerIcon": "icons/icon.ico",
+        "startMenuFolder": "inkdot"
+      }
+    },
+    "longDescription": "离线桌面端批量图片处理工具：压缩、水印、格式转换、裁剪、旋转、调色、边框、圆角、拼接、GIF 等",
+    "shortDescription": "图片处理器",
+    "category": "Utility",
+    "copyright": "Copyright © inkdot",
+    "license": "MIT"
   }
-} 
+}

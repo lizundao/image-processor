@@ -19,7 +19,7 @@ pub async fn compress_single_image(
     settings: CompressSettings,
     global_settings: GlobalSettings,
 ) -> Result<String, String> {
-    match crate::services::compress::compress_single_image(&input_path, &settings, &global_settings).await {
+    match crate::services::compress::compress_single_image(&input_path, &settings, &global_settings, None).await {
         Ok(output_path) => Ok(output_path),
         Err(e) => Err(e.to_string()),
     }
@@ -42,7 +42,7 @@ pub async fn add_single_watermark(
     settings: WatermarkSettings,
     global_settings: GlobalSettings,
 ) -> Result<String, String> {
-    match crate::services::watermark::add_watermark_single(&input_path, &settings, &global_settings).await {
+    match crate::services::watermark::add_watermark_single(&input_path, &settings, &global_settings, None).await {
         Ok(output_path) => Ok(output_path),
         Err(e) => Err(e.to_string()),
     }
@@ -221,7 +221,7 @@ pub async fn crop_single_image(
     settings: CropSettings,
     global_settings: GlobalSettings,
 ) -> Result<String, String> {
-    match crate::services::crop::crop_single_image(&input_path, &settings, &global_settings).await {
+    match crate::services::crop::crop_single_image(&input_path, &settings, &global_settings, None).await {
         Ok(output_path) => Ok(output_path),
         Err(e) => Err(e.to_string()),
     }
@@ -244,7 +244,7 @@ pub async fn rotate_single_image(
     settings: RotateSettings,
     global_settings: GlobalSettings,
 ) -> Result<String, String> {
-    match crate::services::rotate::rotate_single_image(&input_path, &settings, &global_settings).await {
+    match crate::services::rotate::rotate_single_image(&input_path, &settings, &global_settings, None).await {
         Ok(output_path) => Ok(output_path),
         Err(e) => Err(e.to_string()),
     }
@@ -267,7 +267,36 @@ pub async fn flip_single_image(
     settings: FlipSettings,
     global_settings: GlobalSettings,
 ) -> Result<String, String> {
-    match crate::services::flip::flip_single_image(&input_path, &settings, &global_settings).await {
+    match crate::services::flip::flip_single_image(&input_path, &settings, &global_settings, None).await {
+        Ok(output_path) => Ok(output_path),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+/// 调整亮度命令
+#[command]
+pub async fn adjust_brightness(
+    input_paths: Vec<String>,
+    settings: BrightnessSettings,
+    global_settings: GlobalSettings,
+) -> ProcessingResult {
+    adjust_brightness_batch(input_paths, settings, global_settings).await
+}
+
+/// 调整单张图片亮度命令
+#[command]
+pub async fn adjust_brightness_single_image(
+    input_path: String,
+    settings: BrightnessSettings,
+    global_settings: GlobalSettings,
+) -> Result<String, String> {
+    match crate::services::brightness::adjust_brightness_single(
+        &input_path,
+        &settings,
+        &global_settings,
+        None,
+    )
+    .await {
         Ok(output_path) => Ok(output_path),
         Err(e) => Err(e.to_string()),
     }
@@ -290,7 +319,7 @@ pub async fn add_single_border(
     settings: BorderSettings,
     global_settings: GlobalSettings,
 ) -> Result<String, String> {
-    match crate::services::border::add_border_single_image(&input_path, &settings, &global_settings).await {
+    match crate::services::border::add_border_single_image(&input_path, &settings, &global_settings, None).await {
         Ok(output_path) => Ok(output_path),
         Err(e) => Err(e.to_string()),
     }
@@ -313,7 +342,7 @@ pub async fn add_single_rounded_corners(
     settings: RoundedSettings,
     global_settings: GlobalSettings,
 ) -> Result<String, String> {
-    match crate::services::rounded::add_rounded_corners_single_image(&input_path, &settings, &global_settings).await {
+    match crate::services::rounded::add_rounded_corners_single_image(&input_path, &settings, &global_settings, None).await {
         Ok(output_path) => Ok(output_path),
         Err(e) => Err(e.to_string()),
     }
@@ -383,7 +412,7 @@ pub async fn enhance_single_image(
     settings: EnhanceSettings,
     global_settings: GlobalSettings,
 ) -> Result<String, String> {
-    match crate::services::enhance::enhance_apply_one(&input_path, &settings, &global_settings).await {
+    match crate::services::enhance::enhance_apply_one(&input_path, &settings, &global_settings, None).await {
         Ok(output_path) => Ok(output_path),
         Err(e) => Err(e.to_string()),
     }

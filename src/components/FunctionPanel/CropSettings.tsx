@@ -216,21 +216,21 @@ const CropSettings: React.FC<CropSettingsProps> = ({ settings, onChange, images 
         <VStack align="stretch" spacing={2}>
           <HStack>
             <Text fontSize="sm" fontWeight="bold" color="blue.700">
-              📋 {t('crop.operationInstructionsTitle')}:
+              {t('crop.operationInstructionsTitle')}
             </Text>
           </HStack>
           <VStack align="stretch" spacing={1}>
             <Text fontSize="xs" color="blue.600">
-              1️⃣ {t('crop.operationStep1')}
+              {t('crop.operationStep1')}
             </Text>
             <Text fontSize="xs" color="blue.600">
-              2️⃣ {t('crop.operationStep2')}
+              {t('crop.operationStep2')}
             </Text>
             <Text fontSize="xs" color="blue.600">
-              3️⃣ {t('crop.operationStep3')}
+              {t('crop.operationStep3')}
             </Text>
             <Text fontSize="xs" color="blue.600">
-              4️⃣ {t('crop.operationStep4')}
+              {t('crop.operationStep4')}
             </Text>
           </VStack>
         </VStack>
@@ -251,7 +251,7 @@ const CropSettings: React.FC<CropSettingsProps> = ({ settings, onChange, images 
           <Box p={3} bg="green.50" borderRadius="md" border="1px solid" borderColor="green.200">
             <HStack>
               <Text fontSize="sm" fontWeight="bold" color="green.700">
-                ✅ {t('crop.cropParametersSetComplete')}
+                {t('crop.cropParametersSetComplete')}
               </Text>
             </HStack>
             <Text fontSize="xs" color="green.600" mt={1}>
@@ -293,7 +293,7 @@ const CropSettings: React.FC<CropSettingsProps> = ({ settings, onChange, images 
         <VStack align="stretch" spacing={2}>
           <HStack>
             <Text fontSize="sm" fontWeight="bold" color="blue.700">
-              ✂️ {t('crop.cropFunctionDescription')}:
+              {t('crop.cropFunctionDescription')}
             </Text>
           </HStack>
           <VStack align="stretch" spacing={1}>

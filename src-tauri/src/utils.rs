@@ -2,6 +2,7 @@ use std::path::Path;
 use image::ImageFormat;
 use anyhow::{Result, anyhow};
 use chrono;
+use crate::types::GlobalSettings;
 
 /// 获取图片格式
 pub fn get_image_format(format_str: &str) -> Result<ImageFormat> {
@@ -17,21 +18,37 @@ pub fn get_image_format(format_str: &str) -> Result<ImageFormat> {
     }
 }
 
+/// 根据全局设置解析实际输出目录（可选按操作类型分子文件夹）
+pub fn resolve_output_directory(global_settings: &GlobalSettings, suffix: &str) -> String {
+    if global_settings.output_directory.is_empty() {
+        return String::new();
+    }
+
+    if global_settings.create_subfolders {
+        Path::new(&global_settings.output_directory)
+            .join(suffix)
+            .to_string_lossy()
+            .to_string()
+    } else {
+        global_settings.output_directory.clone()
+    }
+}
+
 /// 生成输出文件名
 pub fn generate_output_filename(
     input_path: &str,
-    output_directory: &str,
-    filename_pattern: &str,
+    global_settings: &GlobalSettings,
     suffix: &str,
     extension: &str,
+    file_index: Option<usize>,
 ) -> String {
+    let output_directory = resolve_output_directory(global_settings, suffix);
+    let filename_pattern = &global_settings.filename_pattern;
+
     let path = Path::new(input_path);
-    // 确保获取的是不带扩展名的文件名
     let stem = path.file_stem().unwrap_or_default().to_str().unwrap_or("image");
-    
-    // 如果 stem 包含扩展名（比如从临时文件路径），需要清理
+
     let clean_stem = if stem.contains('.') {
-        // 找到最后一个点，取前面的部分
         if let Some(last_dot) = stem.rfind('.') {
             &stem[..last_dot]
         } else {
@@ -40,64 +57,51 @@ pub fn generate_output_filename(
     } else {
         stem
     };
-    
-    // 获取当前时间戳
-    let now: chrono::DateTime<chrono::Utc> = chrono::Utc::now();
-    let timestamp = now.format("%Y%m%d_%H%M%S").to_string();
-    
-    // 调试输出
-    println!("🔍 文件名生成调试:");
-    println!("  input_path: {}", input_path);
-    println!("  stem: {}", stem);
-    println!("  clean_stem: {}", clean_stem);
-    println!("  filename_pattern: {}", filename_pattern);
-    println!("  suffix: {}", suffix);
-    println!("  extension: {}", extension);
-    println!("  timestamp: {}", timestamp);
-    
-    // 生成文件名
-    let filename = if filename_pattern.contains("{timestamp}") || filename_pattern.contains("{name}") || filename_pattern.contains("{original}") {
+
+    let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S").to_string();
+    let index_str = file_index
+        .map(|i| (i + 1).to_string())
+        .unwrap_or_else(|| "1".to_string());
+
+    let filename = if filename_pattern.contains("{timestamp}")
+        || filename_pattern.contains("{name}")
+        || filename_pattern.contains("{original}")
+        || filename_pattern.contains("{index}")
+    {
         let base_filename = filename_pattern
             .replace("{original}", clean_stem)
-            .replace("{name}", clean_stem)  // 同时支持 {name} 和 {original}
+            .replace("{name}", clean_stem)
             .replace("{timestamp}", &timestamp)
-            .replace("{suffix}", suffix);
-        
-        // println!("  base_filename after replacement: {}", base_filename);
-        
-        // 确保文件名有正确的扩展名（转换为小写）
-        let final_filename = if !base_filename.contains('.') {
+            .replace("{suffix}", suffix)
+            .replace("{index}", &index_str);
+
+        if !base_filename.contains('.') {
             format!("{}.{}", base_filename, extension.to_lowercase())
+        } else if let Some(last_dot) = base_filename.rfind('.') {
+            let name_part = &base_filename[..last_dot];
+            let ext_part = &base_filename[last_dot + 1..];
+            format!("{}.{}", name_part, ext_part.to_lowercase())
         } else {
-            // 如果已经包含扩展名，确保扩展名是小写的
-            if let Some(last_dot) = base_filename.rfind('.') {
-                let name_part = &base_filename[..last_dot];
-                let ext_part = &base_filename[last_dot + 1..];
-                format!("{}.{}", name_part, ext_part.to_lowercase())
-            } else {
-                base_filename
-            }
-        };
-        
-        // println!("  final_filename: {}", final_filename);
-        final_filename
+            base_filename
+        }
     } else {
-        // 使用默认模式：原文件名_后缀_时间戳.扩展名（转换为小写）
-        let default_filename = format!("{}_{}_{}.{}", clean_stem, suffix, timestamp, extension.to_lowercase());
-        // println!("  default_filename: {}", default_filename);
-        default_filename
+        format!(
+            "{}_{}_{}.{}",
+            clean_stem,
+            suffix,
+            timestamp,
+            extension.to_lowercase()
+        )
     };
-    
-    // 构建完整路径
-    let result = if output_directory.is_empty() {
+
+    if output_directory.is_empty() {
         filename
     } else {
-        let output_path = Path::new(output_directory).join(&filename);
-        output_path.to_string_lossy().to_string()
-    };
-    
-    println!("  final result: {}", result);
-    result
+        Path::new(&output_directory)
+            .join(&filename)
+            .to_string_lossy()
+            .to_string()
+    }
 }
 
 /// 检查文件是否已存在，如果存在且不允许覆盖则返回错误
@@ -130,27 +134,32 @@ pub fn validate_image_file(path: &str) -> Result<()> {
     if !Path::new(path).exists() {
         return Err(anyhow!("文件不存在: {}", path));
     }
-    
-    // 尝试打开图片以验证格式
+
     image::open(path)?;
     Ok(())
 }
 
+/// 图片单维像素上限：防止超大画布导致内存耗尽或编码器溢出
+pub const MAX_IMAGE_DIMENSION: u32 = 32767;
+
 /// 解析十六进制颜色
+///
+/// 安全要点：先确认字符串是「恰好 6 个 ASCII 十六进制字符」再按字节切片。
+/// 若直接 `&hex[0..2]`，当输入含中文等多字节 UTF-8 字符时会切在字符边界中间，
+/// 触发 panic；而 Release profile 为 `panic = "abort"`，会导致整个进程闪退。
 pub fn parse_hex_color(hex: &str) -> Result<(u8, u8, u8)> {
     let hex = hex.trim_start_matches('#');
-    if hex.len() != 6 {
-        return Err(anyhow!("无效的颜色格式: {}", hex));
+    if hex.len() != 6 || !hex.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err(anyhow!("无效的颜色格式: {}（应为 #RRGGBB）", hex));
     }
-    
+
+    // 此时 hex 全为单字节 ASCII，切片必然落在字符边界，安全
     let r = u8::from_str_radix(&hex[0..2], 16)?;
     let g = u8::from_str_radix(&hex[2..4], 16)?;
     let b = u8::from_str_radix(&hex[4..6], 16)?;
-    
+
     Ok((r, g, b))
 }
-
-
 
 /// 计算文字位置（带边距）
 pub fn calculate_text_position_with_margin(
@@ -162,8 +171,8 @@ pub fn calculate_text_position_with_margin(
     margin_x: u32,
     margin_y: u32,
 ) -> (u32, u32) {
-    // 估算文字尺寸（简化计算）
-    let text_width = text.len() as u32 * font_size / 2;
+    // 用字符数而非字节数估算中文宽度，避免中文水印整体偏右
+    let text_width = text.chars().count() as u32 * font_size;
     let text_height = font_size;
 
     match position {
@@ -201,20 +210,18 @@ pub fn calculate_text_position_with_margin(
     }
 }
 
-
-
 /// 格式化文件大小
 #[allow(dead_code)]
 pub fn format_file_size(bytes: u64) -> String {
     const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
     let mut size = bytes as f64;
     let mut unit_index = 0;
-    
+
     while size >= 1024.0 && unit_index < UNITS.len() - 1 {
         size /= 1024.0;
         unit_index += 1;
     }
-    
+
     if unit_index == 0 {
         format!("{} {}", bytes, UNITS[unit_index])
     } else {
@@ -242,7 +249,8 @@ pub fn validate_dimensions(width: u32, height: u32) -> Result<()> {
 }
 
 pub fn validate_opacity(opacity: f32) -> Result<()> {
-    if opacity < 0.0 || opacity > 1.0 {
+    // NaN 与任何数比较都为 false，会绕过范围校验，需显式拦截
+    if !opacity.is_finite() || !(0.0..=1.0).contains(&opacity) {
         return Err(anyhow!("透明度必须在0.0-1.0之间"));
     }
     Ok(())

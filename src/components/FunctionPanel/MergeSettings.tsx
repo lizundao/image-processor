@@ -31,7 +31,6 @@ const MergeSettings: React.FC<MergeSettingsProps> = ({ settings, onChange }) => 
   const boxBg = useColorModeValue('gray.50', 'gray.800');
 
   const handleDirectionChange = (direction: 'horizontal' | 'vertical') => {
-    console.log('🔗 [合并设置] 合并方向改变为:', direction);
     onChange({
       direction,
       spacing: current.spacing || 0,
@@ -39,7 +38,6 @@ const MergeSettings: React.FC<MergeSettingsProps> = ({ settings, onChange }) => 
   };
 
   const handleSpacingChange = (spacing: number) => {
-    console.log('🔗 [合并设置] 间距改变为:', spacing);
     onChange({
       direction: current.direction || 'horizontal',
       spacing,

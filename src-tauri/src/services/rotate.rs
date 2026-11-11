@@ -15,8 +15,8 @@ impl RotateService {
         let mut processed_files: Vec<String> = Vec::new();
         let mut errors: Vec<String> = Vec::new();
 
-        for path in input_paths.iter() {
-            match Self::rotate_single_image(path, &settings, &global_settings).await {
+        for (index, path) in input_paths.iter().enumerate() {
+            match Self::rotate_single_image(path, &settings, &global_settings, Some(index)).await {
                 Ok(output_path) => {
                     processed_files.push(output_path);
                 }
@@ -47,6 +47,7 @@ impl RotateService {
         input_path: &str,
         settings: &RotateSettings,
         global_settings: &GlobalSettings,
+        file_index: Option<usize>,
     ) -> Result<String> {
         // 验证输入文件
         validate_image_file(input_path)?;
@@ -77,10 +78,10 @@ impl RotateService {
         let suffix = format!("rotated_{}deg", settings.angle);
         let output_path = generate_output_filename(
             input_path,
-            &global_settings.output_directory,
-            &global_settings.filename_pattern,
+            global_settings,
             &suffix,
             "jpg",
+            file_index,
         );
 
         // 检查文件覆盖
@@ -151,6 +152,7 @@ pub async fn rotate_single_image(
     input_path: &str,
     settings: &RotateSettings,
     global_settings: &GlobalSettings,
+    file_index: Option<usize>,
 ) -> Result<String> {
-    RotateService::rotate_single_image(input_path, settings, global_settings).await
+    RotateService::rotate_single_image(input_path, settings, global_settings, file_index).await
 }

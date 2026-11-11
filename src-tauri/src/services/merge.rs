@@ -68,7 +68,7 @@ impl MergeService {
         }
 
         // 应用合并
-        let merged = Self::apply_merge(&images, settings);
+        let merged = Self::apply_merge(&images, settings)?;
 
         // 根据原图格式选择输出格式
         let (output_format, file_extension) = Self::get_output_format(&input_paths[0]);
@@ -78,10 +78,10 @@ impl MergeService {
         let suffix = format!("merged_{}_spacing{}px", direction_suffix, settings.spacing);
         let output_path = generate_output_filename(
             &input_paths[0],
-            &global_settings.output_directory,
-            &global_settings.filename_pattern,
+            global_settings,
             &suffix,
             file_extension,
+            None,
         );
 
         // 检查文件覆盖
@@ -95,56 +95,59 @@ impl MergeService {
     }
 
     /// 应用合并效果
-    fn apply_merge(images: &[DynamicImage], settings: &MergeSettings) -> DynamicImage {
+    fn apply_merge(images: &[DynamicImage], settings: &MergeSettings) -> Result<DynamicImage> {
         if images.is_empty() {
-            panic!("没有图片需要合并");
+            return Err(anyhow::anyhow!("没有图片需要合并"));
         }
 
-        let spacing = settings.spacing as u32;
+        let spacing = settings.spacing;
         let direction = &settings.direction;
 
         match direction.as_str() {
             "horizontal" => Self::merge_horizontally(images, spacing),
             "vertical" => Self::merge_vertically(images, spacing),
-            _ => panic!("不支持的合并方向: {}", direction),
+            _ => Err(anyhow::anyhow!("不支持的合并方向: {}", direction)),
         }
     }
 
     /// 水平合并（左右排列）
-    fn merge_horizontally(images: &[DynamicImage], spacing: u32) -> DynamicImage {
-        let mut total_width = 0;
-        let mut max_height = 0;
+    fn merge_horizontally(images: &[DynamicImage], spacing: u32) -> Result<DynamicImage> {
+        const MAX_MERGE_PIXELS: u64 = 268_435_456;
+        let mut total_width: u64 = 0;
+        let mut max_height: u32 = 0;
 
-        // 计算总宽度和最大高度
+        // 计算总宽度和最大高度（u64 累加避免溢出）
         for img in images {
             let (width, height) = img.dimensions();
-            total_width += width;
+            total_width += width as u64;
             max_height = max_height.max(height);
         }
 
         // 添加间距
         if images.len() > 1 {
-            total_width += spacing * (images.len() as u32 - 1);
+            total_width = total_width
+                .checked_add((spacing as u64).saturating_mul(images.len() as u64 - 1))
+                .ok_or_else(|| anyhow::anyhow!("合并宽度溢出"))?;
+        }
+        if total_width > u32::MAX as u64 {
+            return Err(anyhow::anyhow!("合并后图片宽度超过 {} 像素", u32::MAX));
+        }
+        let total_width = total_width as u32;
+        if (total_width as u64) * (max_height as u64) > MAX_MERGE_PIXELS {
+            return Err(anyhow::anyhow!("合并后图片尺寸过大，超出内存安全上限"));
         }
 
-        // 创建新画布
-        let mut merged = RgbaImage::new(total_width, max_height);
-
-        // 填充白色背景
-        for y in 0..max_height {
-            for x in 0..total_width {
-                merged.put_pixel(x, y, Rgba([255, 255, 255, 255]));
-            }
-        }
+        // 创建新画布（白色背景）
+        let mut merged = RgbaImage::from_pixel(total_width, max_height, Rgba([255, 255, 255, 255]));
 
         // 逐个放置图片
         let mut current_x = 0;
         for (index, img) in images.iter().enumerate() {
             let (width, height) = img.dimensions();
-            
+
             // 计算垂直居中位置
             let y_offset = (max_height - height) / 2;
-            
+
             // 复制图片像素
             for y in 0..height {
                 for x in 0..width {
@@ -152,53 +155,56 @@ impl MergeService {
                     merged.put_pixel(current_x + x, y_offset + y, pixel);
                 }
             }
-            
+
             current_x += width;
-            
+
             // 添加间距（除了最后一张图片）
             if index < images.len() - 1 {
                 current_x += spacing;
             }
         }
 
-        DynamicImage::ImageRgba8(merged)
+        Ok(DynamicImage::ImageRgba8(merged))
     }
 
     /// 垂直合并（上下排列）
-    fn merge_vertically(images: &[DynamicImage], spacing: u32) -> DynamicImage {
-        let mut max_width = 0;
-        let mut total_height = 0;
+    fn merge_vertically(images: &[DynamicImage], spacing: u32) -> Result<DynamicImage> {
+        const MAX_MERGE_PIXELS: u64 = 268_435_456;
+        let mut max_width: u32 = 0;
+        let mut total_height: u64 = 0;
 
-        // 计算最大宽度和总高度
+        // 计算最大宽度和总高度（u64 累加避免溢出）
         for img in images {
             let (width, height) = img.dimensions();
             max_width = max_width.max(width);
-            total_height += height;
+            total_height += height as u64;
         }
 
         // 添加间距
         if images.len() > 1 {
-            total_height += spacing * (images.len() as u32 - 1);
+            total_height = total_height
+                .checked_add((spacing as u64).saturating_mul(images.len() as u64 - 1))
+                .ok_or_else(|| anyhow::anyhow!("合并高度溢出"))?;
+        }
+        if total_height > u32::MAX as u64 {
+            return Err(anyhow::anyhow!("合并后图片高度超过 {} 像素", u32::MAX));
+        }
+        let total_height = total_height as u32;
+        if (max_width as u64) * (total_height as u64) > MAX_MERGE_PIXELS {
+            return Err(anyhow::anyhow!("合并后图片尺寸过大，超出内存安全上限"));
         }
 
-        // 创建新画布
-        let mut merged = RgbaImage::new(max_width, total_height);
-
-        // 填充白色背景
-        for y in 0..total_height {
-            for x in 0..max_width {
-                merged.put_pixel(x, y, Rgba([255, 255, 255, 255]));
-            }
-        }
+        // 创建新画布（白色背景）
+        let mut merged = RgbaImage::from_pixel(max_width, total_height, Rgba([255, 255, 255, 255]));
 
         // 逐个放置图片
         let mut current_y = 0;
         for (index, img) in images.iter().enumerate() {
             let (width, height) = img.dimensions();
-            
+
             // 计算水平居中位置
             let x_offset = (max_width - width) / 2;
-            
+
             // 复制图片像素
             for y in 0..height {
                 for x in 0..width {
@@ -206,23 +212,23 @@ impl MergeService {
                     merged.put_pixel(x_offset + x, current_y + y, pixel);
                 }
             }
-            
+
             current_y += height;
-            
+
             // 添加间距（除了最后一张图片）
             if index < images.len() - 1 {
                 current_y += spacing;
             }
         }
 
-        DynamicImage::ImageRgba8(merged)
+        Ok(DynamicImage::ImageRgba8(merged))
     }
 
     /// 获取输出格式
     fn get_output_format(input_path: &str) -> (ImageFormat, &'static str) {
         let path = std::path::Path::new(input_path);
         let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("jpg");
-        
+
         match ext.to_lowercase().as_str() {
             "png" => (ImageFormat::Png, "png"),
             "webp" => (ImageFormat::WebP, "webp"),
@@ -241,4 +247,4 @@ pub async fn merge_images_batch(
     global_settings: GlobalSettings,
 ) -> ProcessingResult {
     MergeService::merge_images_batch(input_paths, settings, global_settings).await
-} 
+}

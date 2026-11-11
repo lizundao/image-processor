@@ -29,6 +29,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentFunction, onFunctionChan
     { id: 'crop', name: t('navigation.crop') },
     { id: 'rotate', name: t('navigation.rotate') },
     { id: 'flip', name: t('navigation.flip') },
+    { id: 'brightness', name: t('navigation.brightness') },
     { id: 'border', name: t('navigation.border') },
     { id: 'rounded', name: t('navigation.rounded') },
     { id: 'merge', name: t('navigation.merge') },

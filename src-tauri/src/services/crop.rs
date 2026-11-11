@@ -32,7 +32,7 @@ impl CropService {
                     }
                 }
             }
-            match Self::crop_single_image(path, &per_image_settings, &global_settings).await {
+            match Self::crop_single_image(path, &per_image_settings, &global_settings, Some(idx)).await {
                 Ok(output_path) => {
                     processed_files.push(output_path);
                 }
@@ -63,6 +63,7 @@ impl CropService {
         input_path: &str,
         settings: &CropSettings,
         global_settings: &GlobalSettings,
+        file_index: Option<usize>,
     ) -> Result<String> {
         // 验证输入文件
         validate_image_file(input_path)?;
@@ -127,10 +128,10 @@ impl CropService {
         let suffix = format!("crop_{}", mode_suffix);
         let output_path = generate_output_filename(
             input_path,
-            &global_settings.output_directory,
-            &global_settings.filename_pattern,
+            global_settings,
             &suffix,
             file_extension,
+            file_index,
         );
 
         // 检查文件覆盖
@@ -153,24 +154,26 @@ impl CropService {
 
     /// 应用手动裁剪
     fn apply_manual_crop(
-        img: DynamicImage, 
-        settings: &CropSettings, 
-        img_width: u32, 
+        img: DynamicImage,
+        settings: &CropSettings,
+        img_width: u32,
         img_height: u32
     ) -> Result<DynamicImage> {
         // 检查手动裁剪参数
-        let (x, y, width, height) = if let (Some(x), Some(y), Some(width), Some(height)) = 
+        let (x, y, width, height) = if let (Some(x), Some(y), Some(width), Some(height)) =
             (settings.x, settings.y, settings.width, settings.height) {
             (x, y, width, height)
         } else {
             return Err(anyhow::anyhow!("手动裁剪缺少必要的坐标和尺寸参数"));
         };
 
-        // 验证裁剪区域是否在图片范围内
+        // 验证裁剪区域是否在图片范围内（checked 加法防止 u32 溢出）
         if x >= img_width || y >= img_height {
             return Err(anyhow::anyhow!("裁剪起始坐标超出图片范围"));
         }
-        if x + width > img_width || y + height > img_height {
+        if x.checked_add(width).map_or(true, |v| v > img_width)
+            || y.checked_add(height).map_or(true, |v| v > img_height)
+        {
             return Err(anyhow::anyhow!("裁剪区域超出图片范围"));
         }
         if width == 0 || height == 0 {
@@ -184,17 +187,20 @@ impl CropService {
 
     /// 应用比例裁剪
     fn apply_ratio_crop(
-        img: DynamicImage, 
-        settings: &CropSettings, 
-        img_width: u32, 
+        img: DynamicImage,
+        settings: &CropSettings,
+        img_width: u32,
         img_height: u32
     ) -> Result<DynamicImage> {
-        // 获取目标宽高比
+        // 获取目标宽高比，必须是有限正数（0/负数/NaN/无穷会产出 0 尺寸或越界裁剪）
         let target_ratio = if let Some(ratio) = settings.aspect_ratio {
-            ratio
+            if !ratio.is_finite() || ratio <= 0.0 {
+                return Err(anyhow::anyhow!("宽高比必须是大于 0 的有效数字"));
+            }
+            ratio as f64
         } else if let (Some(w), Some(h)) = (settings.custom_ratio_width, settings.custom_ratio_height) {
             if w > 0 && h > 0 {
-                w as f32 / h as f32
+                w as f64 / h as f64
             } else {
                 return Err(anyhow::anyhow!("自定义比例宽高必须大于0"));
             }
@@ -202,23 +208,25 @@ impl CropService {
             return Err(anyhow::anyhow!("比例裁剪需要指定宽高比或自定义宽高"));
         };
 
-        // 计算当前图片的宽高比
-        let current_ratio = img_width as f32 / img_height as f32;
+        if img_width == 0 || img_height == 0 {
+            return Err(anyhow::anyhow!("图片尺寸无效，无法按比例裁剪"));
+        }
+        let current_ratio = img_width as f64 / img_height as f64;
 
         let (crop_x, crop_y, crop_width, crop_height) = if current_ratio > target_ratio {
-            // 当前图片更宽，需要裁剪宽度
+            // 当前图片更宽，需要裁剪宽度（i64 中转再 clamp，杜绝溢出/下溢）
             let crop_height = img_height;
-            let crop_width = (img_height as f32 * target_ratio) as u32;
+            let crop_width = (img_height as f64 * target_ratio).round() as i64;
+            let crop_width = crop_width.clamp(1, img_width as i64) as u32;
             let crop_x = (img_width - crop_width) / 2;
-            let crop_y = 0;
-            (crop_x, crop_y, crop_width, crop_height)
+            (crop_x, 0, crop_width, crop_height)
         } else {
             // 当前图片更高，需要裁剪高度
             let crop_width = img_width;
-            let crop_height = (img_width as f32 / target_ratio) as u32;
-            let crop_x = 0;
+            let crop_height = (img_width as f64 / target_ratio).round() as i64;
+            let crop_height = crop_height.clamp(1, img_height as i64) as u32;
             let crop_y = (img_height - crop_height) / 2;
-            (crop_x, crop_y, crop_width, crop_height)
+            (0, crop_y, crop_width, crop_height)
         };
 
         // 执行裁剪
@@ -228,24 +236,26 @@ impl CropService {
 
     /// 应用像素裁剪
     fn apply_pixel_crop(
-        img: DynamicImage, 
-        settings: &CropSettings, 
-        img_width: u32, 
+        img: DynamicImage,
+        settings: &CropSettings,
+        img_width: u32,
         img_height: u32
     ) -> Result<DynamicImage> {
         // 检查像素裁剪参数
-        let (x, y, width, height) = if let (Some(x), Some(y), Some(width), Some(height)) = 
+        let (x, y, width, height) = if let (Some(x), Some(y), Some(width), Some(height)) =
             (settings.x, settings.y, settings.width, settings.height) {
             (x, y, width, height)
         } else {
             return Err(anyhow::anyhow!("像素裁剪缺少必要的坐标和尺寸参数"));
         };
 
-        // 验证裁剪区域是否在图片范围内
+        // 验证裁剪区域是否在图片范围内（checked 加法防止 u32 溢出）
         if x >= img_width || y >= img_height {
             return Err(anyhow::anyhow!("裁剪起始坐标超出图片范围"));
         }
-        if x + width > img_width || y + height > img_height {
+        if x.checked_add(width).map_or(true, |v| v > img_width)
+            || y.checked_add(height).map_or(true, |v| v > img_height)
+        {
             return Err(anyhow::anyhow!("裁剪区域超出图片范围"));
         }
         if width == 0 || height == 0 {
@@ -304,12 +314,13 @@ pub async fn crop_single_image(
     input_path: &str,
     settings: &CropSettings,
     global_settings: &GlobalSettings,
+    file_index: Option<usize>,
 ) -> Result<String> {
-    CropService::crop_single_image(input_path, settings, global_settings).await
+    CropService::crop_single_image(input_path, settings, global_settings, file_index).await
 }
 
 /// 获取图片信息
 #[allow(dead_code)]
 pub fn get_image_info(input_path: &str) -> Result<ImageInfo> {
     CropService::get_image_info(input_path)
-} 
+}

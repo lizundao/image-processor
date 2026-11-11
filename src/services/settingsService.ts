@@ -1,12 +1,17 @@
-import { GlobalSettings } from '../types';
+import { GlobalSettings, ProcessingSettings } from '../types';
 
 // Tauri API imports
-import { writeTextFile, readTextFile, exists, createDir } from '@tauri-apps/api/fs';
+import { writeTextFile, readTextFile, exists, mkdir } from '@tauri-apps/plugin-fs';
 import { appDataDir, join } from '@tauri-apps/api/path';
+import { mergeProcessingSettings } from '../utils/defaultProcessingSettings';
+import { isTauriEnv } from '../utils/tauriEnv';
 
 export class SettingsService {
   private static readonly SETTINGS_FILE_NAME = 'settings.json';
+  private static readonly FUNCTION_SETTINGS_FILE_NAME = 'function-settings.json';
   private static settingsCache: GlobalSettings | null = null;
+  private static functionSettingsCache: ProcessingSettings | null = null;
+  private static functionAutoSaveTimeout: ReturnType<typeof setTimeout> | null = null;
 
   /**
    * 获取设置文件路径
@@ -14,6 +19,11 @@ export class SettingsService {
   private static async getSettingsFilePath(): Promise<string> {
     const appDataPath = await appDataDir();
     return await join(appDataPath, this.SETTINGS_FILE_NAME);
+  }
+
+  private static async getFunctionSettingsFilePath(): Promise<string> {
+    const appDataPath = await appDataDir();
+    return await join(appDataPath, this.FUNCTION_SETTINGS_FILE_NAME);
   }
 
   /**
@@ -29,6 +39,7 @@ export class SettingsService {
       filenamePattern: '{name}_{timestamp}',
       autoOpenOutputFolder: true,
       language: 'zh-CN',
+      theme: 'dark',
       // 添加水印默认设置
       watermark: {
         type: 'text',
@@ -50,7 +61,7 @@ export class SettingsService {
    * 检查是否在Tauri环境中
    */
   private static isTauriEnvironment(): boolean {
-    return typeof window !== 'undefined' && '__TAURI__' in window;
+    return isTauriEnv();
   }
 
   /**
@@ -69,7 +80,6 @@ export class SettingsService {
         if (stored) {
           const settings = JSON.parse(stored);
           this.settingsCache = { ...this.getDefaultSettings(), ...settings };
-          console.log('📱 从localStorage加载设置:', this.settingsCache);
           return this.settingsCache!;
         }
       } else {
@@ -81,18 +91,16 @@ export class SettingsService {
           const content = await readTextFile(settingsPath);
           const settings = JSON.parse(content);
           this.settingsCache = { ...this.getDefaultSettings(), ...settings };
-          console.log('💾 从文件加载设置:', this.settingsCache);
           return this.settingsCache!;
         }
       }
 
       // 如果没有保存的设置，返回默认设置
       this.settingsCache = this.getDefaultSettings();
-      console.log('🆕 使用默认设置:', this.settingsCache);
       return this.settingsCache;
 
     } catch (error) {
-      console.error('❌ 加载设置失败:', error);
+      console.error('加载设置失败:', error);
       this.settingsCache = this.getDefaultSettings();
       return this.settingsCache;
     }
@@ -109,7 +117,6 @@ export class SettingsService {
       if (!this.isTauriEnvironment()) {
         // 浏览器环境：使用localStorage
         localStorage.setItem('imageProcessor_settings', JSON.stringify(settings));
-        console.log('📱 设置已保存到localStorage');
       } else {
         // Tauri环境：保存到文件
         const settingsPath = await this.getSettingsFilePath();
@@ -119,20 +126,18 @@ export class SettingsService {
         const dirExists = await exists(appDataPath);
 
         if (!dirExists) {
-          await createDir(appDataPath, { recursive: true });
+          await mkdir(appDataPath, { recursive: true });
         }
 
         // 保存设置到文件
         const content = JSON.stringify(settings, null, 2);
         await writeTextFile(settingsPath, content);
-
-        console.log('💾 设置已保存到文件:', settingsPath);
       }
 
       return true;
 
     } catch (error) {
-      console.error('❌ 保存设置失败:', error);
+      console.error('保存设置失败:', error);
       return false;
     }
   }
@@ -152,9 +157,8 @@ export class SettingsService {
     this.autoSaveTimeout = setTimeout(async () => {
       try {
         await this.saveSettings(settings);
-        console.log('🔄 自动保存完成');
       } catch (error) {
-        console.error('❌ 自动保存失败:', error);
+        console.error('自动保存失败:', error);
       }
     }, delay);
   }
@@ -183,6 +187,79 @@ export class SettingsService {
    */
   static clearCache(): void {
     this.settingsCache = null;
+    this.functionSettingsCache = null;
+  }
+
+  static async loadFunctionSettings(): Promise<ProcessingSettings> {
+    try {
+      if (this.functionSettingsCache) {
+        return this.functionSettingsCache;
+      }
+
+      if (!this.isTauriEnvironment()) {
+        const stored = localStorage.getItem('imageProcessor_functionSettings');
+        if (stored) {
+          this.functionSettingsCache = mergeProcessingSettings(JSON.parse(stored));
+          return this.functionSettingsCache;
+        }
+      } else {
+        const settingsPath = await this.getFunctionSettingsFilePath();
+        if (await exists(settingsPath)) {
+          const content = await readTextFile(settingsPath);
+          this.functionSettingsCache = mergeProcessingSettings(JSON.parse(content));
+          return this.functionSettingsCache;
+        }
+      }
+
+      this.functionSettingsCache = mergeProcessingSettings(undefined);
+      return this.functionSettingsCache;
+    } catch (error) {
+      console.error('加载功能设置失败:', error);
+      this.functionSettingsCache = mergeProcessingSettings(undefined);
+      return this.functionSettingsCache;
+    }
+  }
+
+  static async saveFunctionSettings(settings: ProcessingSettings): Promise<boolean> {
+    try {
+      this.functionSettingsCache = settings;
+
+      if (!this.isTauriEnvironment()) {
+        localStorage.setItem('imageProcessor_functionSettings', JSON.stringify(settings));
+      } else {
+        const settingsPath = await this.getFunctionSettingsFilePath();
+        const appDataPath = await appDataDir();
+        if (!(await exists(appDataPath))) {
+          await mkdir(appDataPath, { recursive: true });
+        }
+        await writeTextFile(settingsPath, JSON.stringify(settings, null, 2));
+      }
+
+      return true;
+    } catch (error) {
+      console.error('保存功能设置失败:', error);
+      return false;
+    }
+  }
+
+  static autoSaveFunctionSettings(settings: ProcessingSettings, delay: number = 800): void {
+    if (this.functionAutoSaveTimeout) {
+      clearTimeout(this.functionAutoSaveTimeout);
+    }
+
+    this.functionAutoSaveTimeout = setTimeout(async () => {
+      try {
+        await this.saveFunctionSettings(settings);
+      } catch (error) {
+        console.error('自动保存功能设置失败:', error);
+      }
+    }, delay);
+  }
+
+  static async resetFunctionSettings(): Promise<ProcessingSettings> {
+    const defaults = mergeProcessingSettings(undefined);
+    await this.saveFunctionSettings(defaults);
+    return defaults;
   }
 
   /**

@@ -22,6 +22,7 @@
     "crop": "Image Crop",
     "rotate": "Image Rotation",
     "flip": "Image Flip",
+    "brightness": "Brightness",
     "border": "Add Border",
     "rounded": "Set Rounded Corners",
     "merge": "Merge Images",
@@ -42,7 +43,13 @@
     "createSubfolders": "Create Subfolders",
     "autoOpenOutputFolder": "Auto-open Output Folder",
     "language": "Language",
-    "languageDescription": "Select interface language, restart required to take effect",
+    "languageDescription": "Select the interface language",
+    "themeSettings": "Theme Settings",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "themeDescription": "Choose the interface appearance, applies immediately",
     "directoryPlaceholder": "Enter or select output directory path",
     "directoryHelp": "Support manual input path or click 'Select Directory' button to browse",
     "behaviorSettings": "Behavior Settings",
@@ -172,7 +179,7 @@
   },
   "crop": {
     "title": "Crop Settings",
-    "functionDescription": "✂️ Image Crop Function Description:",
+    "functionDescription": "Image Crop",
     "ratioModeDesc": "• **Ratio Crop**: Automatically calculate crop area based on aspect ratio, suitable for batch processing",
     "pixelModeDesc": "• **Pixel Crop**: Precisely specify crop coordinates and dimensions, suitable for accurate cropping",
     "manualModeDesc": "• **Manual Crop**: Interactive drag selection, supports nine-grid guidelines, suitable for creative cropping",
@@ -202,7 +209,7 @@
     "operationStep4": "Return to main interface, click \"Start Processing\" to batch crop all images",
     "cropParametersSet": "Crop parameters set ({{count}} images)",
     "continueEditing": "Continue Editing",
-    "cropParametersSetComplete": "✅ Crop parameters set complete!",
+    "cropParametersSetComplete": "Crop parameters set",
     "allImagesCropParametersSet": "All images' crop parameters have been set. Now you can click \"Start Processing\" on the main interface to batch crop all images.",
     "image": "Image {{index}}",
     "set": "Set",
@@ -210,7 +217,37 @@
     "jpeg": "JPEG",
     "png": "PNG",
     "webp": "WEBP",
-    "cropFunctionDescription": "Image Crop Function Description"
+    "cropFunctionDescription": "Image Crop Function Description",
+    "currentCropArea": "Current crop area",
+    "quickRatio": "Quick ratios",
+    "customRatioLabel": "Custom ratio",
+    "enableEqualRatio": "Lock aspect ratio",
+    "ratio": "Ratio: {{ratio}}:1",
+    "operationInstructions": "Instructions:",
+    "customRatioControl": "Custom ratio",
+    "operationFlow": "Steps",
+    "currentMode": "Current mode: Manual crop",
+    "cropParamsComplete": "Crop parameters set",
+    "imageNumber": "Image {{number}}",
+    "cropAreaSaved": "Crop area saved",
+    "cropAreaSavedDesc": "Crop parameters for image {{number}} recorded (in source pixels)",
+    "allCropParamsSet": "All crop parameters set",
+    "allCropParamsSetDesc": "You can start batch processing now",
+    "remainingImages": "Some images are not set yet",
+    "remainingImagesDesc": "Please set the crop area for the remaining images",
+    "paramSet": "Set",
+    "paramNotSet": "Not set",
+    "manualCropTitle": "Manual Crop - Image {{current}} / {{total}}",
+    "equalRatioCrop": "Lock aspect ratio",
+    "previousImage": "Previous",
+    "nextImage": "Next",
+    "saveCurrentCropBtn": "Save current crop",
+    "confirmCrop": "Confirm crop",
+    "cropAreaSavedShort": "Saved",
+    "interactiveDescription": "Drag to select a crop area, adjustable at any time",
+    "manualModeDescription": "Manual crop: drag to select a crop area, adjustable at any time",
+    "outputQuality": "Output quality (1-100)",
+    "outputFormat": "Output format"
   },
   "rotate": {
     "title": "Rotation Settings",
@@ -229,7 +266,21 @@
     "currentFlipStatus": "Current Flip Status:",
     "horizontalFlipStatus": "• Horizontal flip (left-right mirror)",
     "verticalFlipStatus": "• Vertical flip (top-bottom mirror)",
-    "flipTip": "💡 Tip: You can select both horizontal and vertical flip to achieve 180° rotation effect"
+    "flipTip": "Tip: Selecting both horizontal and vertical flip is equivalent to rotating 180°"
+  },
+  "brightness": {
+    "title": "Brightness Adjustment",
+    "description": "Adjust overall image brightness; positive values brighten, negative values darken",
+    "value": "Brightness",
+    "valueDescription": "Range -100 to 100, 0 keeps original brightness",
+    "darker": "Darker",
+    "brighter": "Brighter",
+    "presets": "Quick Presets",
+    "presetDarker": "Darker",
+    "presetNormal": "Normal",
+    "presetBrighter": "Brighter",
+    "tip": "Tip: Small adjustments (±10–25) usually look more natural and help avoid blown highlights or lost detail",
+    "currentValue": "Current brightness: {{value}}"
   },
   "border": {
     "title": "Border Settings",
@@ -317,12 +368,12 @@
     "outputQuality": "Output Quality",
     "qualityRange": "Quality (1-100)",
     "qualityDescription": "Higher quality means larger file size but better image quality",
-    "gifDescription": "🎬 GIF Creation Description",
+    "gifDescription": "GIF Creation",
     "sequenceOrder": "• Will create GIF animation according to image list order",
     "framePlayback": "• Each image serves as one frame, played at set frame rate",
     "dragToReorder": "• Support drag to reorder images to change animation effect",
     "formatSupport": "• Output format is fixed to GIF, supports transparency",
-    "currentSettings": "📊 Current Settings Preview",
+    "currentSettings": "Current Settings",
     "frameRate": "Frame Rate:",
     "loop": "Loop:",
     "infiniteLoop": "Infinite Loop",
@@ -359,6 +410,28 @@
     "deleteImage": "Delete Image",
     "completed": "Completed",
     "error": "Error"
+  },
+  "appMenu": {
+    "file": "File",
+    "fileMenu": "File(F)",
+    "help": "Help",
+    "helpMenu": "Help(H)",
+    "settings": "Settings",
+    "settingsMenu": "Settings(S)",
+    "outputSettings": "Output Settings...",
+    "behaviorSettings": "Behavior Settings...",
+    "languageSettings": "Language...",
+    "themeSettings": "Theme...",
+    "resetAllSettings": "Reset All Settings",
+    "about": "About",
+    "license": "License",
+    "quit": "Quit",
+    "aboutTitle": "About Image Processor",
+    "licenseTitle": "License",
+    "version": "Version {{version}}",
+    "author": "Author: {{author}}",
+    "website": "Website",
+    "freeDescription": "Provided under the MIT open-source license; images are processed locally. See \"License\" for details."
   },
   "languages": {
     "zh-CN": "中文（简体）",
@@ -407,7 +480,7 @@
     "messages": {
       "preparingFiles": "Preparing files...",
       "processingComplete": "Processing complete",
-      "toBlobEmpty": "toBlob returned empty or 0 bytes, trying alternative method"
+      "toBlobEmpty": "Could not read image data, retrying with an alternative method"
     }
   },
   "resize": {
@@ -416,4 +489,4 @@
     "targetWidth": "Target Width (pixels)",
     "targetHeight": "Target Height (pixels)"
   }
-} 
+}

@@ -26,7 +26,15 @@ dist-ssr
 
 # Tauri
 src-tauri/target
-src-tauri/Cargo.lock
+src-tauri/gen/schemas
+
+# 打包产物（绿色版 zip / 便携目录；安装包已随 target 忽略）
+release/
+*.zip
+
+# 截图/临时测试产物
+ScreenShot_*.png
+launch.log
 
 # Environment variables
 .env

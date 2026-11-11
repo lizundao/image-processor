@@ -1,6 +1,7 @@
 import { ImageFile, ProcessingFunction, ProcessingSettings, GlobalSettings } from '../types';
 import { TauriImageProcessingService } from './tauriImageProcessing';
 import { t } from '../i18n';
+import { isTauriEnv } from '../utils/tauriEnv';
 
 export interface ProcessingResult {
   success: boolean;
@@ -13,7 +14,7 @@ export class ImageProcessingService {
    * 检测当前环境并选择最佳处理方法
    */
   private static isTauriEnvironment(): boolean {
-    return typeof window !== 'undefined' && '__TAURI__' in window;
+    return isTauriEnv();
   }
 
   /**
@@ -92,7 +93,6 @@ export class ImageProcessingService {
           if (blob && blob.size > 0) {
              resolve(blob);
           } else {
-            console.warn(t('services.messages.toBlobEmpty') as string);
             tryDataURL();
           }
         }, mimeType, quality);
@@ -100,7 +100,6 @@ export class ImageProcessingService {
         // 设置超时，如果toBlob没有响应，使用备用方法
         setTimeout(() => {
           if (!toBlobAttempted) {
-            console.warn('⚠️ toBlob超时，使用备用方法');
             tryDataURL();
           }
         }, 2000);
@@ -109,15 +108,11 @@ export class ImageProcessingService {
       // 方法2: 使用toDataURL作为备用方案
       const tryDataURL = () => {
         try {
-          console.log('🔄 尝试方法2: canvas.toDataURL()');
-
           const dataURL = canvas.toDataURL(mimeType, quality);
 
           if (!dataURL || dataURL === 'data:,' || dataURL.length < 100) {
             throw new Error(`DataURL无效: 长度=${dataURL?.length || 0}`);
           }
-
-          console.log(`📊 DataURL长度: ${dataURL.length}`);
 
           // 将DataURL转换为Blob
           const base64Data = dataURL.split(',')[1];
@@ -142,7 +137,6 @@ export class ImageProcessingService {
           resolve(blob);
 
         } catch (error) {
-          console.error('❌ DataURL方法也失败:', error);
           tryImageData();
         }
       };
@@ -187,8 +181,6 @@ export class ImageProcessingService {
 
           const blob = new Blob([bytes], { type: 'image/jpeg' });
 
-          console.log(`✅ ImageData方法成功: ${blob.size} bytes (强制JPEG格式)`);
-
           if (blob.size === 0) {
             throw new Error('最终生成的Blob仍然是0字节');
           }
@@ -196,7 +188,6 @@ export class ImageProcessingService {
           resolve(blob);
 
         } catch (error) {
-          console.error('❌ 所有方法都失败了:', error);
           reject(new Error(`无法生成图片数据: ${error instanceof Error ? error.message : String(error)}`));
         }
       };
@@ -216,8 +207,6 @@ export class ImageProcessingService {
       const processedImages: ImageFile[] = [];
 
       for (const image of images) {
-        console.log(`🔄 开始处理: ${image.name}`);
-
         // 创建图片元素
         const img = new Image();
         img.crossOrigin = 'anonymous';
@@ -228,8 +217,6 @@ export class ImageProcessingService {
           img.onerror = () => reject(new Error('图片加载失败'));
           img.src = image.url;
         });
-
-        console.log(`📐 图片尺寸: ${img.width}x${img.height}`);
 
         // 创建Canvas
         const canvas = document.createElement('canvas');
@@ -251,7 +238,6 @@ export class ImageProcessingService {
 
         // 强制使用JPEG格式和固定质量
         const quality = (settings?.quality || 80) / 100;
-        console.log(`🎨 压缩质量: ${quality}`);
 
         // 使用toDataURL方法（在Tauri中更可靠）
         const dataURL = canvas.toDataURL('image/jpeg', quality);
@@ -260,13 +246,9 @@ export class ImageProcessingService {
           throw new Error(`生成的DataURL无效，长度: ${dataURL?.length || 0}`);
         }
 
-        console.log(`📊 DataURL长度: ${dataURL.length}`);
-
         // 转换为Blob
         const response = await fetch(dataURL);
         const blob = await response.blob();
-
-        console.log(`✅ 生成Blob: ${blob.size} bytes`);
 
         if (blob.size === 0) {
           throw new Error('生成的Blob大小为0');
@@ -282,7 +264,6 @@ export class ImageProcessingService {
         };
 
         processedImages.push(processedImage);
-        console.log(`✅ 处理完成: ${image.name} -> ${processedImage.name}`);
       }
 
       return {
@@ -290,7 +271,6 @@ export class ImageProcessingService {
         processedImages,
       };
     } catch (error) {
-      console.error('❌ 简化压缩失败:', error);
       return {
         success: false,
         processedImages: [],
@@ -319,8 +299,6 @@ export class ImageProcessingService {
 
         const img = await this.loadImage(image.url);
 
-        console.log(`🖼️ 处理图片: ${image.name}, 原始尺寸: ${img.width}x${img.height}, 原始大小: ${image.size} bytes`);
-
         // 验证图片是否正确加载
         if (img.width === 0 || img.height === 0) {
           throw new Error(`图片尺寸无效: ${img.width}x${img.height}`);
@@ -328,9 +306,6 @@ export class ImageProcessingService {
 
         canvas.width = img.width;
         canvas.height = img.height;
-
-        // 检查Canvas状态
-        console.log(`🎨 Canvas尺寸设置: ${canvas.width}x${canvas.height}`);
 
         // 清除Canvas并设置白色背景（对于JPEG格式很重要）
         ctx.fillStyle = '#FFFFFF';
@@ -342,10 +317,9 @@ export class ImageProcessingService {
         // 验证Canvas内容
         const imageData = ctx.getImageData(0, 0, Math.min(10, canvas.width), Math.min(10, canvas.height));
         const pixelSum = Array.from(imageData.data.slice(0, 12)).reduce((a, b) => a + b, 0);
-        console.log(`🔍 Canvas像素数据样本: ${imageData.data.slice(0, 12)}, 像素和: ${pixelSum}`);
 
         if (pixelSum === 0) {
-          console.warn('⚠️ Canvas像素数据全为0，可能绘制失败');
+          throw new Error('Canvas 绘制失败');
         }
         
         const quality = settings?.quality || 80;
@@ -353,7 +327,6 @@ export class ImageProcessingService {
         const mimeType = this.getMimeType(format);
 
         const blob = await this.getCanvasBlob(canvas, mimeType, quality / 100);
-        console.log(`✅ 压缩成功: ${image.name}, 原始大小: ${image.size}, 压缩后: ${blob.size}, 质量: ${quality}%`);
         
         const processedImage: ImageFile = {
           id: `${image.id}_compressed`,
@@ -443,7 +416,6 @@ export class ImageProcessingService {
         }
         
         const blob = await this.getCanvasBlob(canvas, image.type);
-        console.log(`✅ 水印添加成功: ${image.name}, 大小: ${blob.size}`);
         
         const processedImage: ImageFile = {
           id: `${image.id}_watermarked`,
@@ -498,7 +470,6 @@ export class ImageProcessingService {
         const mimeType = this.getMimeType(format);
 
         const blob = await this.getCanvasBlob(canvas, mimeType);
-        console.log(`✅ 格式转换成功: ${image.name} -> ${format}, 大小: ${blob.size}`);
         
         const processedImage: ImageFile = {
           id: `${image.id}_converted`,
@@ -537,26 +508,20 @@ export class ImageProcessingService {
   ): Promise<ProcessingResult> {
     // 首先测试Canvas API是否正常工作
     const canvasWorking = await this.testCanvasAPI();
-    console.log(`🔧 Canvas API测试结果: ${canvasWorking ? '正常' : '异常'}`);
 
     switch (functionName) {
       case 'compress':
-        // 在Tauri环境或Canvas API异常时，优先使用简化方法
         if (this.isTauriEnvironment() || !canvasWorking) {
-          console.log('🔄 使用简化压缩方法（Tauri优化）');
           const result = await this.compressImagesSimple(images, settings.compress);
 
-          // 如果简化方法失败，尝试原方法
           if (!result.success) {
-            console.log('🔄 简化方法失败，尝试原方法');
             return this.compressImages(images, settings.compress);
           }
 
           return result;
-        } else {
-          console.log('🔄 使用标准压缩方法');
-          return this.compressImages(images, settings.compress);
         }
+
+        return this.compressImages(images, settings.compress);
 
       case 'watermark':
         return this.addWatermark(images, settings.watermark);

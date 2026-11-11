@@ -11,8 +11,8 @@ pub async fn resize_images_simple(
 ) -> ProcessingResult {
 	let mut processed_files: Vec<String> = Vec::new();
 
-	for path in input_paths.iter() {
-		match resize_one(path, &settings, &global_settings).await {
+	for (index, path) in input_paths.iter().enumerate() {
+		match resize_one(path, &settings, &global_settings, Some(index)).await {
 			Ok(out) => processed_files.push(out),
 			Err(e) => {
 				return ProcessingResult {
@@ -31,6 +31,7 @@ async fn resize_one(
 	input_path: &str,
 	settings: &ResizeSimpleSettings,
 	global_settings: &GlobalSettings,
+	file_index: Option<usize>,
 ) -> Result<String> {
 	validate_image_file(input_path)?;
 
@@ -59,10 +60,10 @@ async fn resize_one(
 	let suffix = format!("resized_{}x{}", new_w, new_h);
 	let out_path = generate_output_filename(
 		input_path,
-		&global_settings.output_directory,
-		&global_settings.filename_pattern,
+		global_settings,
 		&suffix,
 		"jpg",
+		file_index,
 	);
 
 	check_file_overwrite(&out_path, global_settings.overwrite_existing)?;

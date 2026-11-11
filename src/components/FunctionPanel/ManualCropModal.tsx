@@ -245,15 +245,15 @@ const ManualCropModal: React.FC<ManualCropModalProps> = ({
             {/* 裁剪信息 */}
             <Box p={4} bg={useColorModeValue('white','gray.800')} border="1px solid" borderColor={useColorModeValue('gray.200','gray.600')} borderRadius="md" width="100%">
               <Text fontSize="sm" fontWeight="semibold" mb={2} color={useColorModeValue('gray.900','gray.100')}>
-                当前裁剪区域:
+                {t('crop.currentCropArea')}
               </Text>
               <HStack spacing={6} wrap="wrap">
                 <Text fontSize="sm" color={useColorModeValue('gray.800','gray.200')}>X: {completedCrop ? Math.round(completedCrop.x) : Math.round(crop.x)}</Text>
                 <Text fontSize="sm" color={useColorModeValue('gray.800','gray.200')}>Y: {completedCrop ? Math.round(completedCrop.y) : Math.round(crop.y)}</Text>
-                <Text fontSize="sm" color={useColorModeValue('gray.800','gray.200')}>宽度: {completedCrop ? Math.round(completedCrop.width) : Math.round(crop.width)}</Text>
-                <Text fontSize="sm" color={useColorModeValue('gray.800','gray.200')}>高度: {completedCrop ? Math.round(completedCrop.height) : Math.round(crop.height)}</Text>
+                <Text fontSize="sm" color={useColorModeValue('gray.800','gray.200')}>{t('crop.width')}: {completedCrop ? Math.round(completedCrop.width) : Math.round(crop.width)}</Text>
+                <Text fontSize="sm" color={useColorModeValue('gray.800','gray.200')}>{t('crop.height')}: {completedCrop ? Math.round(completedCrop.height) : Math.round(crop.height)}</Text>
                 <Text fontSize="sm" color={useColorModeValue('gray.900','gray.100')}>
-                  比例: {completedCrop ? (completedCrop.width / completedCrop.height).toFixed(2) : (crop.width / crop.height).toFixed(2)}:1
+                  {t('crop.ratio', { ratio: (completedCrop ? completedCrop.width / completedCrop.height : crop.width / crop.height).toFixed(2) })}
                 </Text>
               </HStack>
             </Box>
@@ -263,10 +263,10 @@ const ManualCropModal: React.FC<ManualCropModalProps> = ({
               <VStack align="stretch" spacing={3}>
                 <HStack justify="space-between" align="center">
                   <Text fontSize="sm" fontWeight="semibold" color={useColorModeValue('gray.900','gray.100')}>
-                    🔧 自定义比例控制
+                    {t('crop.customRatioControl')}
                   </Text>
                   <HStack spacing={2}>
-                    <Text fontSize="xs" color={useColorModeValue('gray.700','gray.300')}>启用等比裁剪</Text>
+                    <Text fontSize="xs" color={useColorModeValue('gray.700','gray.300')}>{t('crop.enableEqualRatio')}</Text>
                     <Switch
                       isChecked={aspectRatio !== undefined}
                       onChange={(e) => {
@@ -286,7 +286,7 @@ const ManualCropModal: React.FC<ManualCropModalProps> = ({
                                  {aspectRatio !== undefined && (
                    <HStack spacing={3}>
                      <FormControl size="sm">
-                       <FormLabel fontSize="xs" color={useColorModeValue('gray.700','gray.200')}>自定义比例</FormLabel>
+                       <FormLabel fontSize="xs" color={useColorModeValue('gray.700','gray.200')}>{t('crop.customRatioLabel')}</FormLabel>
                        <HStack spacing={2}>
                          <NumberInput min={1} value={customRatioW} onChange={(_, v) => { const w = v || 1; setCustomRatioW(w); if (aspectRatio !== undefined) { setAspectRatio(w / (customRatioH || 1)); } }} size="sm" width="80px">
                            <NumberInputField />
@@ -296,13 +296,13 @@ const ManualCropModal: React.FC<ManualCropModalProps> = ({
                            <NumberInputField />
                          </NumberInput>
                          <Button size="sm" onClick={() => setAspectRatio((customRatioW || 1) / (customRatioH || 1))} colorScheme="gray" variant="outline">
-                           应用
+                           {t('common.apply')}
                          </Button>
                        </HStack>
                      </FormControl>
                      
                      <VStack spacing={1}>
-                       <Text fontSize="xs" color={useColorModeValue('gray.700','gray.300')}>快速比例</Text>
+                       <Text fontSize="xs" color={useColorModeValue('gray.700','gray.300')}>{t('crop.quickRatio')}</Text>
                        <HStack spacing={1}>
                          {[1, 4/3, 3/4, 16/9, 9/16, 2/1, 1/2].map((ratio) => (
                            <Button
@@ -326,7 +326,7 @@ const ManualCropModal: React.FC<ManualCropModalProps> = ({
             <Box p={3} bg="blue.50" borderRadius="md" width="100%">
               <VStack align="stretch" spacing={2}>
                 <Text fontSize="sm" color="blue.700" fontWeight="medium">
-                  💡 操作说明：
+                  {t('crop.operationInstructions')}
                 </Text>
                 <VStack align="stretch" spacing={1}>
                   <Text fontSize="xs" color="blue.600">
@@ -378,7 +378,7 @@ const ManualCropModal: React.FC<ManualCropModalProps> = ({
               确定裁剪
             </Button>
             
-            <Button onClick={onClose}>取消</Button>
+            <Button onClick={onClose}>{t('common.cancel')}</Button>
           </HStack>
         </ModalFooter>
       </ModalContent>

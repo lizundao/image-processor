@@ -50,7 +50,6 @@ const BorderSettings: React.FC<BorderSettingsProps> = ({ settings, onChange }) =
   const boxBg = useColorModeValue('gray.50', 'gray.700');
 
   const handleWidthChange = (value: number) => {
-    console.log('🎨 [边框宽度] 改变为:', value, '当前透明度:', current.opacity);
     onChange({
       width: value,
       color: current.color || '#000000',
@@ -87,7 +86,6 @@ const BorderSettings: React.FC<BorderSettingsProps> = ({ settings, onChange }) =
   };
 
   const handleOpacityChange = (opacity: number) => {
-    console.log('🎨 [边框透明度] 改变为:', opacity);
     onChange({
       width: current.width || 10,
       color: current.color || '#000000',
@@ -100,7 +98,6 @@ const BorderSettings: React.FC<BorderSettingsProps> = ({ settings, onChange }) =
   };
 
   const handleOverlayModeChange = (checked: boolean) => {
-    console.log('🎨 [边框模式] 改变为:', checked ? '覆盖模式' : '扩展模式');
     const newSettings = {
       width: current.width || 10,
       color: current.color || '#000000',
@@ -110,13 +107,10 @@ const BorderSettings: React.FC<BorderSettingsProps> = ({ settings, onChange }) =
       enable_transparency: current.enable_transparency || false,
       border_radius: current.border_radius || 0,
     };
-    console.log('🎨 [边框模式] 发送新设置:', newSettings);
-    console.log('🎨 [边框模式] 确认overlay_mode值:', newSettings.overlay_mode);
     onChange(newSettings);
   };
 
   const handleTransparencyChange = (checked: boolean) => {
-    console.log('🎨 [透明度开关] 改变为:', checked);
     const newSettings = {
       width: current.width || 10,
       color: current.color || '#000000',
@@ -126,14 +120,10 @@ const BorderSettings: React.FC<BorderSettingsProps> = ({ settings, onChange }) =
       enable_transparency: checked,
       border_radius: current.border_radius || 0,
     };
-    console.log('🎨 [透明度开关] 发送新设置:', newSettings);
-    console.log('🎨 [透明度开关] 确认enable_transparency值:', newSettings.enable_transparency);
     onChange(newSettings);
   };
 
   const handleBorderRadiusChange = (radius: number) => {
-    console.log('🎨 [边框圆角] 改变为:', radius);
-    console.log('🎨 [边框圆角] 当前设置:', current);
     const newSettings = {
       width: current.width || 10,
       color: current.color || '#000000',
@@ -143,7 +133,6 @@ const BorderSettings: React.FC<BorderSettingsProps> = ({ settings, onChange }) =
       enable_transparency: current.enable_transparency || false,
       border_radius: radius,
     };
-    console.log('🎨 [边框圆角] 发送新设置:', newSettings);
     onChange(newSettings);
   };
 

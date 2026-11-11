@@ -22,6 +22,7 @@
     "crop": "图片裁剪",
     "rotate": "图片旋转",
     "flip": "图片翻转",
+    "brightness": "亮度调整",
     "border": "添加边框",
     "rounded": "设置圆角",
     "merge": "合并图片",
@@ -42,7 +43,13 @@
     "createSubfolders": "创建子文件夹",
     "autoOpenOutputFolder": "自动打开输出文件夹",
     "language": "语言",
-    "languageDescription": "选择界面语言，重启后生效",
+    "languageDescription": "选择界面显示语言",
+    "themeSettings": "主题设置",
+    "theme": "主题",
+    "themeLight": "浅色",
+    "themeDark": "深色",
+    "themeSystem": "跟随系统",
+    "themeDescription": "选择界面外观，立即生效",
     "directoryPlaceholder": "输入或选择输出目录路径",
     "directoryHelp": "支持手动输入路径或点击\"选择目录\"按钮浏览选择",
     "behaviorSettings": "行为设置",
@@ -81,7 +88,7 @@
   "compress": {
     "title": "压缩设置",
     "qualitySettings": "质量设置",
-    "qualityDescription": "值越高越清晰,文件也越大 预估压缩率:根据图片内容而定"
+    "qualityDescription": "数值越高越清晰，文件也越大；实际压缩率因图片内容而异"
   },
   "watermark": {
     "title": "水印设置",
@@ -172,7 +179,7 @@
   },
   "crop": {
     "title": "裁剪设置",
-    "functionDescription": "✂️ 图片裁剪功能说明：",
+    "functionDescription": "图片裁剪功能说明",
     "ratioModeDesc": "• **等比裁剪**：根据宽高比自动计算裁剪区域，适合批量处理",
     "pixelModeDesc": "• **像素裁剪**：精确指定裁剪坐标和尺寸，适合精确裁剪",
     "manualModeDesc": "• **手动裁剪**：交互式拖拽选择，支持九宫格辅助线，适合创意裁剪",
@@ -195,10 +202,10 @@
     "pixelModeDescription": "像素裁剪：精确指定裁剪区域的位置和尺寸",
     "xCoordinate": "X坐标",
     "yCoordinate": "Y坐标",
-    "currentMode": "🎯 当前模式：手动裁剪",
+    "currentMode": "当前模式：手动裁剪",
     "interactiveDescription": "交互式选择裁剪区域，支持拖拽调整，适合创意裁剪需求",
     "manualModeDescription": "手动裁剪：交互式选择裁剪区域，支持拖拽调整",
-    "operationFlow": "📋 操作流程说明：",
+    "operationFlow": "操作流程",
     "operationInstructionsTitle": "操作流程说明",
     "operationStep1": "点击\"开始手动裁剪\"进入裁剪界面",
     "operationStep2": "在每张图片上拖拽选择裁剪区域",
@@ -208,9 +215,9 @@
     "cropParametersSet": "已设置裁剪参数 ({{count}} 张)",
     "continueEdit": "继续编辑",
     "continueEditing": "继续编辑",
-    "cropParamsComplete": "✅ 裁剪参数设置完成！",
+    "cropParamsComplete": "裁剪参数设置完成",
     "cropParamsCompleteDesc": "所有图片的裁剪参数已设置完成。现在可以点击主界面的\"开始处理\"按钮来批量裁剪所有图片。",
-    "cropParametersSetComplete": "✅ 裁剪参数设置完成！",
+    "cropParametersSetComplete": "裁剪参数设置完成",
     "allImagesCropParametersSet": "所有图片的裁剪参数已设置完成。现在可以点击主界面的\"开始处理\"按钮来批量裁剪所有图片。",
     "currentImage": "当前图片: {{current}} / {{total}}",
     "imageNumber": "图片 {{number}}",
@@ -229,12 +236,12 @@
     "equalRatioCrop": "等比裁剪",
     "currentCropArea": "当前裁剪区域:",
     "ratio": "比例: {{ratio}}:1",
-    "customRatioControl": "🔧 自定义比例控制",
+    "customRatioControl": "自定义比例",
     "enableEqualRatio": "启用等比裁剪",
     "customRatioLabel": "自定义比例",
     "apply": "应用",
     "quickRatio": "快速比例",
-    "operationInstructions": "💡 操作说明：",
+    "operationInstructions": "操作说明：",
     "dragToSelect": "• 在图片上拖拽鼠标来选择裁剪区域",
     "saveCurrentCrop": "• 点击\"保存当前裁剪\"按钮保存当前图片的设置",
     "useArrows": "• 使用左右箭头切换图片，为每张图片设置裁剪区域",
@@ -270,7 +277,21 @@
     "currentFlipStatus": "当前翻转状态：",
     "horizontalFlipStatus": "• 水平翻转（左右镜像）",
     "verticalFlipStatus": "• 垂直翻转（上下镜像）",
-    "flipTip": "💡 提示：可以同时选择水平和垂直翻转，实现180°旋转效果"
+    "flipTip": "提示：同时勾选水平与垂直翻转，效果等同于旋转 180°"
+  },
+  "brightness": {
+    "title": "亮度调整",
+    "description": "调整图片整体亮度，正值变亮，负值变暗",
+    "value": "亮度",
+    "valueDescription": "范围 -100 到 100，0 为原图亮度",
+    "darker": "更暗",
+    "brighter": "更亮",
+    "presets": "快捷预设",
+    "presetDarker": "较暗",
+    "presetNormal": "正常",
+    "presetBrighter": "较亮",
+    "tip": "提示：小幅调整（±10~25）通常更自然，可避免过曝或细节丢失",
+    "currentValue": "当前亮度：{{value}}"
   },
   "border": {
     "title": "边框设置",
@@ -358,12 +379,12 @@
     "outputQuality": "输出质量",
     "qualityRange": "质量 (1-100)",
     "qualityDescription": "质量越高，文件越大，但画质更好",
-    "gifDescription": "🎬 GIF合成说明",
+    "gifDescription": "GIF 合成说明",
     "sequenceOrder": "• 将按照图片列表顺序合成GIF动画",
     "framePlayback": "• 每张图片作为一帧，按设定帧率播放",
     "dragToReorder": "• 支持拖拽调整图片顺序来改变动画效果",
     "formatSupport": "• 输出格式固定为GIF，支持透明度",
-    "currentSettings": "📊 当前设置预览",
+    "currentSettings": "当前设置",
     "frameRate": "帧率:",
     "loop": "循环:",
     "infiniteLoop": "无限循环",
@@ -400,6 +421,28 @@
     "deleteImage": "删除图片",
     "completed": "完成",
     "error": "错误"
+  },
+  "appMenu": {
+    "file": "文件",
+    "fileMenu": "文件(F)",
+    "help": "帮助",
+    "helpMenu": "帮助(H)",
+    "settings": "设置",
+    "settingsMenu": "设置(S)",
+    "outputSettings": "输出设置...",
+    "behaviorSettings": "行为设置...",
+    "languageSettings": "语言...",
+    "themeSettings": "主题...",
+    "resetAllSettings": "重置全部设置",
+    "about": "关于",
+    "license": "许可证",
+    "quit": "退出",
+    "aboutTitle": "关于图片处理器",
+    "licenseTitle": "许可证",
+    "version": "版本 {{version}}",
+    "author": "作者：{{author}}",
+    "website": "网站",
+    "freeDescription": "依据 MIT 开源许可提供，图片全程本地处理。具体条款见「许可证」。"
   },
   "languages": {
     "zh-CN": "中文（简体）",
@@ -448,7 +491,7 @@
     "messages": {
       "preparingFiles": "准备文件...",
       "processingComplete": "处理完成",
-      "toBlobEmpty": "toBlob返回空或0字节，尝试备用方法"
+      "toBlobEmpty": "图像数据读取异常，正在尝试备用方式"
     }
   },
   "resize": {
@@ -457,4 +500,4 @@
     "targetWidth": "目标宽度（像素）",
     "targetHeight": "目标高度（像素）"
   }
-} 
+}

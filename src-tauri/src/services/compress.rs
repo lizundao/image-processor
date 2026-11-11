@@ -9,6 +9,7 @@ pub async fn compress_single_image(
     input_path: &str,
     settings: &CompressSettings,
     global_settings: &GlobalSettings,
+    file_index: Option<usize>,
 ) -> Result<String> {
 
     // 验证输入
@@ -60,10 +61,10 @@ pub async fn compress_single_image(
     
     let output_path = generate_output_filename(
         input_path,
-        &global_settings.output_directory,
-        &global_settings.filename_pattern,
+        global_settings,
         "compressed",
         extension,
+        file_index,
     );
     
     // 检查文件覆盖
@@ -138,44 +139,43 @@ pub async fn compress_images_batch(
 ) -> ProcessingResult {
     
     let mut processed_files = Vec::new();
+    let mut errors: Vec<String> = Vec::new();
     let mut total_original_size = 0u64;
     let mut total_compressed_size = 0u64;
-    
-    for (_index, input_path) in input_paths.iter().enumerate() {
-        
-        match compress_single_image(input_path, &settings, &global_settings).await {
+
+    for (index, input_path) in input_paths.iter().enumerate() {
+
+        match compress_single_image(input_path, &settings, &global_settings, Some(index)).await {
             Ok(output_path) => {
                 // 统计文件大小
                 if let (Ok(original), Ok(compressed)) = (get_file_size(input_path), get_file_size(&output_path)) {
                     total_original_size += original;
                     total_compressed_size += compressed;
                 }
-                
+
                 processed_files.push(output_path);
             }
             Err(e) => {
-                return ProcessingResult {
-                    success: false,
-                    processed_files: vec![],
-                    error: Some(format!("压缩失败: {}", e)),
-                };
+                errors.push(format!("{}: {}", input_path, e));
             }
         }
     }
-    
+
     // 计算总体压缩率
     let _total_compression_ratio = if total_original_size > 0 {
         (1.0 - (total_compressed_size as f64 / total_original_size as f64)) * 100.0
     } else {
         0.0
     };
-    
 
-    
-    ProcessingResult {
-        success: true,
-        processed_files,
-        error: None,
+    if errors.is_empty() {
+        ProcessingResult { success: true, processed_files, error: None }
+    } else {
+        ProcessingResult {
+            success: false,
+            processed_files,
+            error: Some(errors.join("; ")),
+        }
     }
 }
 
