@@ -1,12 +1,18 @@
 name: 三平台打包（绿色版 / 安装版 / 苹果版）
 
 # 触发方式：
-#   1) 手动：Actions 页 → 选本工作流 → Run workflow（推荐测试时用，避免每次 push 都烧额度）
+#   1) 手动：Actions 页 → 选本工作流 → Run workflow（用于重新打包验证）
 #   2) 打 tag：git tag v1.0.0 && git push origin v1.0.0 → 自动构建并创建草稿 Release
 #
-# 额度说明：本仓库为公开开源仓库，GitHub 标准 runner 构建不计费。
+# 额度说明：本仓库为公开开源仓库，GitHub 标准 runner 构建免费、不计分钟。
 #   仅手动触发或打 tag 时构建，不绑定每次 push。
 #   若改回私有仓库：GitHub Free 2000 分钟/月，倍率 Linux 1× / Windows 2× / macOS 10×。
+#
+# 产物命名：统一使用 ASCII 发布名，与 PDF 工具箱保持一致，四件套：
+#   ImageProcessor-1.0.0-setup-win-x64.exe
+#   ImageProcessor-1.0.0-portable-win-x64.zip
+#   ImageProcessor-1.0.0-aarch64.dmg
+#   ImageProcessor-1.0.0-aarch64.app.zip
 
 on:
   workflow_dispatch:
@@ -51,12 +57,19 @@ jobs:
           Copy-Item LICENSE $root
           Compress-Archive -Path $root -DestinationPath release/ImageProcessor-1.0.0-portable-win-x64.zip -Force
 
+      - name: 规范化安装版文件名为 ASCII
+        shell: pwsh
+        run: |
+          $nsis = Get-ChildItem 'src-tauri/target/release/bundle/nsis/*-setup.exe' | Select-Object -First 1
+          if (-not $nsis) { throw '未找到 NSIS 安装包' }
+          Copy-Item $nsis.FullName 'release/ImageProcessor-1.0.0-setup-win-x64.exe' -Force
+
       - name: 上传 Windows 产物
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer-and-portable
           path: |
-            src-tauri/target/release/bundle/nsis/*-setup.exe
+            release/ImageProcessor-1.0.0-setup-win-x64.exe
             release/ImageProcessor-1.0.0-portable-win-x64.zip
           if-no-files-found: error
           retention-days: 7
@@ -89,13 +102,26 @@ jobs:
       - name: 构建 Tauri（macOS .app + .dmg）
         run: npm run tauri build -- --target aarch64-apple-darwin --bundles app,dmg
 
+      - name: 规范化 macOS 产物文件名（ASCII + app.zip）
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          dmg=$(find src-tauri/target/aarch64-apple-darwin/release/bundle/dmg -maxdepth 1 -name '*.dmg' | head -n 1)
+          app=$(find src-tauri/target/aarch64-apple-darwin/release/bundle/macos -maxdepth 1 -name '*.app' | head -n 1)
+          [ -n "$dmg" ] || { echo "未找到 dmg"; exit 1; }
+          [ -n "$app" ] || { echo "未找到 app"; exit 1; }
+          cp "$dmg" release/ImageProcessor-1.0.0-aarch64.dmg
+          ditto -c -k --keepParent "$app" release/ImageProcessor-1.0.0-aarch64.app.zip
+          ls -lh release/
+
       - name: 上传 macOS 产物
         uses: actions/upload-artifact@v4
         with:
           name: macos-apple-silicon
           path: |
-            src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
-            src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app
+            release/ImageProcessor-1.0.0-aarch64.dmg
+            release/ImageProcessor-1.0.0-aarch64.app.zip
           if-no-files-found: error
           retention-days: 7
 
