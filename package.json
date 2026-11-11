@@ -31,7 +31,7 @@
     "dev:tauri": "tauri dev",
     "release": "npm run tauri build",
     "release:portable": "npm run release && npm run release:zip",
-    "release:zip": "powershell -NoProfile -Command \"$root='release/图片处理器-1.0.0-便携版'; New-Item -ItemType Directory -Force -Path $root | Out-Null; Copy-Item src-tauri/target/release/image-processor.exe $root; Copy-Item docs/RELEASE.md $root; Copy-Item LICENSE $root; Compress-Archive -Path $root -DestinationPath release/ImageProcessor-1.0.0-portable-win-x64.zip -Force; Get-Item release/ImageProcessor-1.0.0-portable-win-x64.zip, $root/image-processor.exe | Select-Object Name,Length,LastWriteTime\""
+    "release:zip": "powershell -NoProfile -Command \"$root='release/ImageProcessor-1.0.0-portable-win-x64'; New-Item -ItemType Directory -Force -Path $root | Out-Null; Copy-Item src-tauri/target/release/image-processor.exe $root; Copy-Item docs/RELEASE.md $root; Copy-Item LICENSE $root; Compress-Archive -Path $root -DestinationPath release/ImageProcessor-1.0.0-portable-win-x64.zip -Force; Get-Item release/ImageProcessor-1.0.0-portable-win-x64.zip, $root/image-processor.exe | Select-Object Name,Length,LastWriteTime\""
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.2.4",

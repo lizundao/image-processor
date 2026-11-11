@@ -4,7 +4,7 @@
 
 ## 一、技术说明
 
-本项目使用 [Tauri 1.5](https://tauri.app/v1/) 将 React 前端与 Rust 后端打包为原生桌面程序：
+本项目使用 [Tauri 2](https://v2.tauri.app/) 将 React 前端与 Rust 后端打包为原生桌面程序：
 
 ```
 npm run build        → 编译前端到 dist/
@@ -44,7 +44,7 @@ npm run build:tauri  → 编译 Rust + 打包安装程序
 |------|------|------|
 | **Visual Studio Build Tools** | 编译 Rust 原生代码 | 安装时勾选「使用 C++ 的桌面开发」 |
 | **WebView2** | 渲染界面 | Windows 10/11 通常已内置；缺失时 [点此下载](https://developer.microsoft.com/microsoft-edge/webview2/) |
-| **WiX Toolset 3.11**（可选） | 生成 `.msi` 安装包 | 仅打 MSI 时需要；[下载 WiX 3.11](https://wixtoolset.org/docs/wysiwyg/) |
+| **NSIS** | 生成安装版 | 由 Tauri 自动下载；本项目仅发布 NSIS 安装包，不生成 MSI |
 
 推荐使用 **x64** 工具链：
 
@@ -116,25 +116,18 @@ npm run build:tauri
 src-tauri/target/release/bundle/
 ```
 
-默认安装路径为英文目录（避免 `Program Files` 下出现中文路径）：
-
-```
-C:\Program Files\ImageProcessor\
-```
-
-安装界面、快捷方式名称仍为「图片处理器」。自定义模板见 `src-tauri/windows/wix/main.wxs` 与 `src-tauri/windows/nsis/installer.nsi`。
+安装以「当前用户」模式进行（无需管理员权限），默认安装到用户目录；开始菜单文件夹为 `inkdot`，安装界面与快捷方式名称仍为「图片处理器」。安装程序配置见 `src-tauri/tauri.conf.json` 的 `bundle.windows.nsis`。
 
 #### Windows
 
 | 目录 | 文件类型 | 说明 |
 |------|----------|------|
-| `bundle/msi/` | `.msi` | Windows Installer，适合企业分发 |
-| `bundle/nsis/` | `-setup.exe` | NSIS 安装程序，适合普通用户 |
+| `bundle/nsis/` | `-setup.exe` | NSIS 安装程序，适合普通用户（本项目发布此格式）|
 
 同时会生成可执行文件：
 
 ```
-src-tauri/target/release/图片处理器.exe
+src-tauri/target/release/image-processor.exe
 ```
 
 > 注意：仅复制 `.exe` 在没有 WebView2 的机器上可能无法运行，建议分发安装包。
@@ -143,7 +136,7 @@ src-tauri/target/release/图片处理器.exe
 
 ```
 bundle/macos/图片处理器.app
-bundle/dmg/图片处理器_x.x.x_x64.dmg   # 或 aarch64
+bundle/dmg/图片处理器_x.x.x_aarch64.dmg   # Apple Silicon
 ```
 
 #### Linux
@@ -164,21 +157,21 @@ npx tauri build --bundles none
 产物位于 `src-tauri/target/release/`：
 
 ```
-图片处理器.exe
-resources/
-  icon.ico
+image-processor.exe
 ```
 
-**打包为 zip**（需同时包含 exe 与 `resources` 文件夹）：
+Tauri 2 已将运行资源内嵌到单个 exe，无需额外 `resources` 文件夹。
+
+**打包为 zip**（含 exe、发布说明与许可）：
 
 ```powershell
 # 在项目根目录执行（PowerShell）
-$version = "1.0.0"
-$outDir = "release/ImageProcessor-$version-x64-portable"
+$outDir = "release/ImageProcessor-1.0.0-portable-win-x64"
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
-Copy-Item "src-tauri/target/release/*.exe" $outDir
-Copy-Item "src-tauri/target/release/resources" $outDir -Recurse
-Compress-Archive -Path $outDir -DestinationPath "release/ImageProcessor-$version-x64-portable.zip" -Force
+Copy-Item "src-tauri/target/release/image-processor.exe" $outDir
+Copy-Item "docs/RELEASE.md" $outDir
+Copy-Item "LICENSE" $outDir
+Compress-Archive -Path $outDir -DestinationPath "release/ImageProcessor-1.0.0-portable-win-x64.zip" -Force
 ```
 
 便携版说明与用户文档见 [RELEASE.md](RELEASE.md)。
@@ -188,9 +181,6 @@ Compress-Archive -Path $outDir -DestinationPath "release/ImageProcessor-$version
 ```bash
 # 仅 NSIS（Windows 常用）
 npm run tauri build -- --bundles nsis
-
-# 仅 MSI
-npm run tauri build -- --bundles msi
 
 # 仅 DMG（macOS）
 npm run tauri build -- --bundles dmg
@@ -204,7 +194,7 @@ npm run tauri build -- --bundles dmg
 
 - [ ] **版本号**已更新（至少两处保持一致）：
   - `package.json` → `"version"`
-  - `src-tauri/tauri.conf.json` → `package.version`
+  - `src-tauri/tauri.conf.json` → 顶层 `version`
   - `src-tauri/Cargo.toml` → `version`
   - `src/constants/app.ts` → `APP_VERSION`（关于对话框显示）
 - [ ] `npm run build` 无报错
@@ -222,10 +212,8 @@ npm run tauri build -- --bundles dmg
 `src-tauri/tauri.conf.json`：
 
 ```json
-"package": {
-  "productName": "图片处理器",
-  "version": "1.0.0"
-}
+"productName": "图片处理器",
+"version": "1.0.0"
 ```
 
 ### 应用图标
@@ -256,57 +244,39 @@ npm run tauri build -- --bundles dmg
 
 未安装 C++ 构建工具。请安装 Visual Studio Build Tools，并勾选「使用 C++ 的桌面开发」。
 
-### 2. `light.exe` / MSI 打包失败（中文应用名）
+### 2. NSIS 打包报「另一个程序正在使用此文件」
 
-若日志类似：
-
-```
-Running light to produce ...\图片处理器_1.0.0_x64_en-US.msi
-Error failed to bundle project: error running light.exe
-```
-
-**原因**：WiX 默认使用英文代码页（1252），无法处理 `productName` 里的中文（如「图片处理器」），`candle` 能过但 `light` 链接失败。
-
-**解决**（本项目已配置）：
-
-```json
-"bundle": {
-  "windows": {
-    "wix": {
-      "language": "zh-CN"
-    }
-  }
-}
-```
-
-**替代方案**：只打 NSIS 安装包（对中文名更友好）：
+若重复打包时报错，多为上一次产物被占用（杀软扫描 / 资源管理器预览）。删除旧安装包后重新执行：
 
 ```bash
-npx tauri build --bundles nsis
+npm run tauri build -- --bundles nsis
 ```
 
-产物：`bundle/nsis/图片处理器_1.0.0_x64-setup.exe`
+产物：`bundle/nsis/图片处理器_1.0.0_x64-setup.exe`（发布时重命名为 `ImageProcessor-1.0.0-setup-win-x64.exe`）。
 
-### 3. WiX / MSI 环境缺失
+### 3. `assetProtocol` / `protocol-asset` 相关报错
 
-- 安装 WiX Toolset 3.11 并加入 PATH
-- 或改用 NSIS：`npx tauri build --bundles nsis`
+本地图片预览依赖 `convertFileSrc`，需在 `src-tauri/Cargo.toml` 启用 feature：
+
+```toml
+tauri = { version = "2", features = ["protocol-asset"] }
+```
 
 ### 4. 首次打包非常慢
 
 Release 编译 Rust 依赖（image、webp 等）耗时较长，后续有缓存会快很多。
 
-### 4. 白屏或窗口空白
+### 5. 白屏或窗口空白
 
 - 确认 `npm run build` 已成功生成 `dist/`
 - 开发模式用 `npm run dev:tauri`，不要直接用浏览器打开 `dist/index.html`
 
-### 5. 杀毒软件误报
+### 6. 杀毒软件误报
 
 未签名的 exe 可能被误报。正式发布建议：
 - 使用代码签名证书对安装包签名（Windows Authenticode / Apple Notarization）
 
-### 6. 清理构建缓存
+### 7. 清理构建缓存
 
 ```bash
 # 清理 Rust 构建产物
@@ -343,7 +313,7 @@ Remove-Item -Recurse -Force dist
 
 构建完成后，将 `src-tauri/target/release/bundle/` 下对应平台的安装包发给用户即可：
 
-- **Windows 用户**：推荐 `.exe`（NSIS）或 `.msi`
+- **Windows 用户**：`.exe`（NSIS 安装版）或绿色版 zip
 - **macOS 用户**：`.dmg`
 - **Linux 用户**：`.AppImage` 或 `.deb`
 
