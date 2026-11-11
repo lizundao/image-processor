@@ -66,27 +66,25 @@
 
 ### 方式 A：免安装便携版（推荐快速体验）
 
-1. 下载 `ImageProcessor-1.0.0-x64-portable.zip`
+1. 下载 `ImageProcessor-1.0.0-portable-win-x64.zip`
 2. 解压到任意目录，例如 `D:\Tools\ImageProcessor\`
-3. 双击 **`图片处理器.exe`** 运行
-4. **不要删除** 同目录下的 `resources` 文件夹
+3. 双击 **`image-processor.exe`** 运行（Tauri 2 已将运行资源内嵌到单个 exe，无需额外资源目录）
 
 ```
-ImageProcessor-1.0.0-x64-portable/
-├── 图片处理器.exe      ← 主程序
-├── resources/          ← 程序资源（必须保留）
-└── 使用说明.txt
+ImageProcessor-1.0.0-portable-win-x64/
+├── image-processor.exe   ← 主程序（资源已内嵌）
+├── RELEASE.md            ← 发布说明
+└── LICENSE               ← 许可文件
 ```
 
 **便携版优点**：不写注册表、不安装到 Program Files，可放 U 盘随身携带。  
-**注意**：请勿只复制 `.exe` 而遗漏 `resources` 文件夹，否则程序无法正常运行。
+**说明**：Tauri 2 已将运行所需资源内嵌到单个 `image-processor.exe`，单独复制 exe 即可运行；建议一并保留 `RELEASE.md` 与 `LICENSE`。
 
 ### 方式 B：安装版
 
 | 格式 | 文件名示例 | 说明 |
 |------|------------|------|
-| NSIS 安装程序 | `图片处理器_1.0.0_x64-setup.exe` | 常规用户推荐，双击安装向导即可 |
-| MSI 安装包 | `图片处理器_1.0.0_x64_zh-CN.msi` | 适合企业统一部署 |
+| NSIS 安装程序 | `ImageProcessor-1.0.0-setup-win-x64.exe` | 常规用户推荐，双击安装向导即可（当前用户安装，免管理员权限） |
 
 安装版默认安装路径（英文目录）：
 
@@ -299,7 +297,7 @@ C:\Program Files\ImageProcessor\
    前往 [WebView2 下载页](https://developer.microsoft.com/microsoft-edge/webview2/) 安装「Evergreen Bootstrapper」或「Evergreen Standalone Installer」。
 
 2. **便携版文件不完整**  
-   确保 `图片处理器.exe` 与 `resources` 文件夹在同一目录。
+   确认 zip 已完整解压；Tauri 2 已将运行资源内嵌到单个 `image-processor.exe`，无需额外资源目录。
 
 3. **杀毒软件拦截**  
    本软件未做代码签名，部分杀毒软件可能误报。可添加信任或暂时关闭实时防护后重试。
@@ -371,9 +369,10 @@ GIF 按图片列表**从上到下**的顺序合成。请在右侧列表中拖拽
 
 | 文件 | 类型 | 说明 |
 |------|------|------|
-| `ImageProcessor-1.0.0-x64-portable.zip` | 免安装版 | 解压即用，推荐个人用户 |
-| `图片处理器_1.0.0_x64-setup.exe` | NSIS 安装包 | 在 `src-tauri/target/release/bundle/nsis/` |
-| `图片处理器_1.0.0_x64_zh-CN.msi` | MSI 安装包 | 在 `src-tauri/target/release/bundle/msi/` |
+| `ImageProcessor-1.0.0-setup-win-x64.exe` | Windows 安装版 | 发布名；本地构建产物为 `图片处理器_1.0.0_x64-setup.exe`，在 `src-tauri/target/release/bundle/nsis/` |
+| `ImageProcessor-1.0.0-portable-win-x64.zip` | Windows 绿色版 | 由 `npm run release:portable` 产出，在 `release/` |
+| `ImageProcessor-1.0.0-aarch64.dmg` | macOS 安装包 | Apple Silicon，未签名，由 CI 构建 |
+| `ImageProcessor-1.0.0-aarch64.app.zip` | macOS 应用包 | Apple Silicon，未签名，由 CI 构建 |
 
 ---
 

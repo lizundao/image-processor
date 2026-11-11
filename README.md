@@ -43,7 +43,7 @@ npm run release:portable  # 编译 + 绿色版 zip（推荐发布）
 打包产物：
 
 - **绿色版**：`release/ImageProcessor-1.0.0-portable-win-x64.zip`（含 exe + 用户文档 + 许可）
-- **安装版**：`src-tauri/target/release/bundle/nsis/图片处理器_1.0.0_x64-setup.exe`
+- **安装版**：`src-tauri/target/release/bundle/nsis/图片处理器_1.0.0_x64-setup.exe`（发布时重命名为 `ImageProcessor-1.0.0-setup-win-x64.exe`）
 
 详细打包说明见 [docs/BUILD.md](docs/BUILD.md)。
 
@@ -55,7 +55,8 @@ npm run release:portable  # 编译 + 绿色版 zip（推荐发布）
 |------|------|------|
 | Windows | `ImageProcessor-1.0.0-setup-win-x64.exe` | 安装版，当前用户安装，免管理员权限 |
 | Windows | `ImageProcessor-1.0.0-portable-win-x64.zip` | 绿色版，解压即用，不写注册表 |
-| macOS | `ImageProcessor-1.0.0-aarch64.dmg` | Apple Silicon（未签名，见下方说明） |
+| macOS | `ImageProcessor-1.0.0-aarch64.dmg` | Apple Silicon 安装包（未签名，见下方说明） |
+| macOS | `ImageProcessor-1.0.0-aarch64.app.zip` | Apple Silicon 应用包（未签名，见下方说明） |
 
 > 未签名程序首次运行会触发 Windows SmartScreen / macOS Gatekeeper 提示，处理方式见 [发布说明](docs/RELEASE.md) 与 [代码审核报告](docs/代码审核报告.md)。
 
